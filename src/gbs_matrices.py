@@ -33,6 +33,40 @@ class GraphMatrices:
 
         return X @ (I - np.linalg.inv(cov_Q))
 
+    @staticmethod
+    def is_valid_Amat(A, tol=1e-7):
+        (n,m) = A.shape
+
+        if n != m:
+            raise ValueError('Input matrix should be square')
+        if n % 2 != 0:
+            raise ValueError('Input matrix should have even number of rows/columns')
+
+        M = n // 2
+        B1 = A[:M, :M]
+        C1 = A[:M, M:]
+        C2 = A[M:, :M]
+        B2 = A[M:, M:]
+
+        if not np.allclose(A, A.T):  # This will require both C1=C2.T and B1=B2.T
+            raise ValueError('Input matrix should be symmetric')
+
+        if not np.allclose(B1, B2.conjugate()):
+            raise ValueError('Input matrix should have block diagonal B and B^*')
+        if not np.allclose(C1, C1.T.conjugate()):
+            raise ValueError('Input matrix should have off diagonal C and C.T, such that C is Hermitian')
+
+        eigs_A = np.linalg.eigvalsh(A)
+        if np.any(abs(eigs_A) >= 1):
+            raise ValueError('Input matrix should have eigenvalues with absolute value smaller than 1')
+
+        if not np.allclose(B1@C1, C1@B1):
+            raise ValueError('Input matrix submatrix should satisfy B and C commute')
+
+        if np.any(C1 < 0):
+            raise ValueError('Input matrix off diagonal block submatrix should satisfy C>=0')
+
+        return True
 
 class GaussianMatrices:
 
@@ -40,6 +74,47 @@ class GaussianMatrices:
     def vacuum(M, dtype=np.float64):
 
         return np.identity(2 * M) / 2
+
+    @staticmethod
+    def cov_fock_from_A(A, dtype=np.complex64):
+
+        if not GraphMatrices.is_valid_Amat(A):
+            raise Exception('Input matrix is not valid A matrix')
+
+        M = A.shape[0] // 2
+        X = GraphMatrices.Xmat(M, dtype=dtype)
+
+        Sigma_Q_inv = np.identity(2*M, dtype=dtype) - X @ A
+        Sigma_Q = np.linalg.inv(Sigma_Q_inv)
+
+        cov_fock = Sigma_Q - np.identity(2*M) / 2
+
+        return cov_fock
+
+    @staticmethod
+    def sigma_Q_from_A(A, dtype=np.complex64):
+        if not GraphMatrices.is_valid_Amat(A):
+            raise Exception('Input matrix is not valid A matrix')
+
+        M = A.shape[0] // 2
+        X = GraphMatrices.Xmat(M, dtype=dtype)
+
+        Sigma_Q_inv = np.identity(2*M, dtype=dtype) - X @ A
+        Sigma_Q = np.linalg.inv(Sigma_Q_inv)
+
+        return Sigma_Q
+
+    @staticmethod
+    def mu_fock_from_A(A, gamma, dtype=np.complex64):
+
+        if A.shape[0] != gamma.shape[0]:
+            raise ValueError('Input matrix and vector should have compatible shape')
+
+        sigma_Q = GaussianMatrices.sigma_Q_from_A(A, dtype=dtype)
+
+        d_conj = gamma @ sigma_Q
+
+        return d_conj.conjugate()
 
     @staticmethod
     def is_valid_xxpp_cov(cov_xxpp, tol=1e-7):
