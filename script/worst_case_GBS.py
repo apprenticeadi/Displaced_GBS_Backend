@@ -67,7 +67,8 @@ eigs_B = np.linalg.eigvalsh(B_matrix)
 c_factor = random.uniform(0.0, 1.0) * 1 / abs(max(eigs_B, key=abs))
 
 O_mat = np.zeros_like(B_matrix)
-A_mat = np.block([[c_factor*B_matrix, O_mat], [O_mat, c_factor*B_matrix]])
+cB = c_factor * B_matrix
+A_mat = np.block([[cB, O_mat], [O_mat, cB]])
 
 assert GraphMatrices.is_valid_Amat(A_mat) == True
 
@@ -86,4 +87,4 @@ assert np.allclose(D, 0.5*np.identity(2*M))
 O1, smat, O2 = bloch_messiah(S)
 
 squeezing = np.log(np.diagonal(smat)[:M])
-displacement = mu_xxpp[:M] + mu_xxpp[M:]
+displacement = (mu_xxpp[:M] + mu_xxpp[M:])/ np.sqrt(2)
