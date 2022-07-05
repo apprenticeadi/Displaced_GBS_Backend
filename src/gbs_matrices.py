@@ -34,6 +34,16 @@ class GraphMatrices:
         return X @ (I - np.linalg.inv(cov_Q))
 
     @staticmethod
+    def pure_A_from_B(Bmat, dtype=np.complex64):
+        Omat = np.zeros_like(Bmat)
+        Amat = np.block([
+            [Bmat, Omat],
+            [Omat, Bmat.conjugate()]
+        ])
+
+        return Amat
+
+    @staticmethod
     def is_valid_Amat(A, tol=1e-7):
         (n,m) = A.shape
 
@@ -193,11 +203,3 @@ class GaussianMatrices:
         mu_fock = Symplectic.vector_xxpp_to_fock(mu_xxpp)
 
         return GaussianMatrices.is_valid_fock_mu(mu_fock)
-
-    @staticmethod
-    def remove_small(a, tol=1e-7):
-
-        a.real[abs(a.real) < tol] = 0.0
-        a.imag[abs(a.imag) < tol] = 0.0
-
-        return a
