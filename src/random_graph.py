@@ -60,3 +60,12 @@ class RandomGraph:
             count_dict[degree] += 1
 
         return count_dict
+
+    def generate_Bmatrix(self, x, half_gamma):
+
+        if np.any(half_gamma == 0):
+            raise ValueError('Half gamma vector cannot have zeros')
+
+        B_matrix = self.adj * x * half_gamma * half_gamma[:, np.newaxis]
+
+        return B_matrix
