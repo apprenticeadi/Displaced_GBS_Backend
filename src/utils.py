@@ -1,4 +1,4 @@
-
+import os
 
 class MatrixUtils:
 
@@ -20,3 +20,13 @@ class MatrixUtils:
             A[i,i] = gamma_i
 
         return A
+
+
+class DFUtils:
+
+    @staticmethod
+    def create_filename(filename: str):
+
+        os.makedirs(os.path.dirname(filename), exist_ok=True)
+
+        return filename
