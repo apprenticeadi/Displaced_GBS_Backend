@@ -15,7 +15,7 @@ from src.log_utils import LogUtils
 x = -1  # edge activity
 r_max = 1  # maximum squeezing available in experiment
 gamma_low = 1
-gamma_high = 10
+gamma_high = np.sqrt(10)
 M_list = [5, 8, 10, 13, 15, 18, 20]
 log_diag_weights = list(range(-5, 6))  # log(w)
 
@@ -33,7 +33,6 @@ logging.info('edge activity x={}, r_max={}, gamma_low={}, gamma_high={}, M_list=
 
 
 # <<<<<<<<<<<<<<<<<<< Plotting  >>>>>>>>>>>>>>>>>>
-
 # sq photons
 fig1, ax1 = plt.subplots()
 ax1.set_title('Average squeezed photons')
@@ -127,7 +126,9 @@ for M in M_list:
     ax3.plot(log_diag_weights, sq_phots / coh_phots, label='M={}'.format(M))
 
 ax1.legend()
+fig1.savefig(dir+r'\sq_phot.pdf')
 ax2.legend()
+fig2.savefig(dir+r'\cl_phot.pdf')
 ax3.legend()
-
+fig3.savefig(dir+r'\sq_div_cl.pdf')
 
