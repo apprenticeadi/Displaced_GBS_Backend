@@ -7,9 +7,11 @@ import os
 class LogUtils:
 
     @staticmethod
-    def log_config(module_name='', level=logging.INFO):
+    def log_config(dir=None, module_name='', level=logging.INFO):
         time_stamp = datetime.datetime.now().strftime("%d-%b-%Y-(%H.%M.%S.%f)")
-        logging_filename = r'..\Results\logs\{}.txt'.format(time_stamp)
+        if dir is None:
+            dir = r'..\Results\logs'
+        logging_filename = dir + r'\{}.txt'.format(time_stamp)
         os.makedirs(os.path.dirname(logging_filename), exist_ok=True)
 
         stdout_handler = logging.StreamHandler(sys.stdout)
