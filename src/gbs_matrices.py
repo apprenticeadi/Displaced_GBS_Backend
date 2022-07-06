@@ -78,6 +78,22 @@ class GraphMatrices:
 
         return True
 
+    @staticmethod
+    def is_valid_Gamma(Gamma):
+        m = Gamma.shape[0]
+
+        if m % 2 != 0 :
+            raise ValueError('Input vector should have even length')
+
+        M = m // 2
+        halfgamma_1 = Gamma[:M]
+        halfgamma_2 = Gamma[M:]
+
+        if not np.allclose(halfgamma_1, halfgamma_2.conjugate()):
+            raise ValueError('Input vector should have form (v, v.conjugate)')
+
+        return True
+
 class GaussianMatrices:
 
     @staticmethod
