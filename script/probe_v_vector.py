@@ -12,7 +12,7 @@ from src.gbs_matrices import GraphMatrices, GaussianMatrices
 from src.log_utils import LogUtils
 
 # <<<<<<<<<<<<<<<<<<< Parameters  >>>>>>>>>>>>>>>>>>
-x = -1  # edge activity
+x = 1  # edge activity
 r_max = 1  # maximum squeezing available in experiment
 gamma_low = 1
 gamma_high = np.sqrt(10)
