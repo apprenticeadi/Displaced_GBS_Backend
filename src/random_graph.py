@@ -2,6 +2,8 @@ import numpy as np
 import random
 
 
+# TODO: Need to clean this up and make it compatible with networkx
+
 class RandomGraph:
 
     def __init__(self, M, max_degree):
@@ -10,7 +12,7 @@ class RandomGraph:
 
         self.M = M
         self.max_degree = max_degree
-        self.adj = self.__generate()
+        self.__adj = self.__generate()
 
     def __generate(self):
         """Random unweighted loopless graph. """
@@ -49,10 +51,10 @@ class RandomGraph:
         return adj
 
     def adjacency_matrix(self):
-        return self.adj
+        return self.__adj
 
     def degrees(self):
-        return np.sum(self.adj, 0)  # sum every column
+        return np.sum(self.__adj, 0)  # sum every column
 
     def degree_counts(self):
         count_dict = dict.fromkeys(range(self.max_degree+1), 0)
@@ -66,6 +68,6 @@ class RandomGraph:
         if np.any(half_gamma == 0):
             raise ValueError('Half gamma vector cannot have zeros')
 
-        B_matrix = self.adj * x * half_gamma * half_gamma[:, np.newaxis]
+        B_matrix = self.__adj * x * half_gamma * half_gamma[:, np.newaxis]
 
         return B_matrix
