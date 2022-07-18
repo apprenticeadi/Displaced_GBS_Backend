@@ -2,7 +2,7 @@ import numpy as np
 from strawberryfields.decompositions import williamson
 
 from src.symplectic import Symplectic
-
+from src.utils import MatrixUtils
 
 class GraphMatrices:
 
@@ -44,7 +44,19 @@ class GraphMatrices:
         return Amat
 
     @staticmethod
-    def is_valid_Amat(A, tol=1e-7):
+    def Gamma(cov_fock, d_fock, dtype=np.complex64):
+        """
+        :param cov_fock: Fock state covariance matrix
+        :param d_fock: Fock state displacement vector (alpha_1, ..., alpha_M, alpha_1^*, ..., alpha_M^*)
+        :return: The 2M Gamma vector that fills A diagonal when calculating loop Hafnian.
+        """
+
+        cov_Q = GraphMatrices.cov_Q(cov_fock)
+        return d_fock.conjugate() @ np.linalg.inv(cov_Q)
+
+
+    @staticmethod
+    def is_valid_Amat(A):
         (n,m) = A.shape
 
         if n != m:
@@ -147,7 +159,7 @@ class GaussianMatrices:
 
         (n, m) = cov_xxpp.shape
 
-        cov_xxpp = GaussianMatrices.remove_small(cov_xxpp, tol)
+        cov_xxpp = MatrixUtils.remove_small(cov_xxpp, tol)
 
         # Check it is square
         if n != m:
@@ -219,3 +231,20 @@ class GaussianMatrices:
         mu_fock = Symplectic.vector_xxpp_to_fock(mu_xxpp)
 
         return GaussianMatrices.is_valid_fock_mu(mu_fock)
+
+    @staticmethod
+    def is_valid_U(U, tol=1e-7, dtype=np.complex64):
+
+        (n, m) = U.shape
+
+        U = MatrixUtils.remove_small(U, tol=tol)
+
+        if n != m:
+            raise ValueError('Input matrix should be square')
+
+        Id = np.identity(n, dtype=dtype)
+
+        if not np.allclose(U @ U.T.conjugate(), Id):
+            raise ValueError('Input matrix should be unitary')
+
+        return True
