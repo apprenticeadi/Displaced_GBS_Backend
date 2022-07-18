@@ -5,9 +5,17 @@ class MatrixUtils:
 
     @staticmethod
     def remove_small(a, tol=1e-7):
+        """
+        :param a: Any complex np array
+        :param tol: Relative tolerance compared to the average
+        :return: a with small elements removed
+        """
 
-        a.real[abs(a.real) < tol] = 0.0
-        a.imag[abs(a.imag) < tol] = 0.0
+        a_flat = a.flatten()
+        av = a_flat.sum() / a_flat.shape[0]
+
+        a.real[abs(a.real) / abs(av.real) < tol] = 0.0
+        a.imag[abs(a.imag) / abs(av.imag) <tol] = 0.0
 
         return a
 
