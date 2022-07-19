@@ -1,6 +1,7 @@
 from strawberryfields.decompositions import takagi
 import numpy as np
 import random
+import copy
 
 import interferometer as itf
 
@@ -14,6 +15,7 @@ class PureGBS:
         :param M: Number of modes of the experiment.
         """
         self.M = M
+        self._B = None
 
     @staticmethod
     def random_interferometer(M, depth):
@@ -58,11 +60,20 @@ class PureGBS:
         self.alphas = alphas
 
     def calc_B(self):
-        D = np.identity(self.M)
-        v = np.tanh(self.rs)
-        D = MatrixUtils.filldiag(D, v)
 
-        return self.U @ D @ self.U.T
+        # Cautious: numpy arrays are mutable, so instance attributes will change if tamper with the array outside the class!
+
+        if self._B is None:
+            D = np.identity(self.M)
+            v = np.tanh(self.rs)
+            D = MatrixUtils.filldiag(D, v)
+            B = self.U @ D @ self.U.T
+
+            self._B = copy.deepcopy(B)
+        else:
+            B = copy.deepcopy(self._B)
+
+        return B
 
     def calc_A(self):
         B = self.calc_B()
