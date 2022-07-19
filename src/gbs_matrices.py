@@ -78,7 +78,7 @@ class GraphMatrices:
         if not np.allclose(C1, C1.T.conjugate()):
             raise ValueError('Input matrix should have off diagonal C and C.T, such that C is Hermitian')
 
-        eigs_A = np.linalg.eigvalsh(A)
+        eigs_A = np.linalg.eigvals(A)  # A is not symmetric but not necessarily Hermitian.
         if np.any(abs(eigs_A) >= 1):
             raise ValueError('Input matrix should have eigenvalues with absolute value smaller than 1')
 
@@ -178,7 +178,7 @@ class GaussianMatrices:
             raise ValueError('Input matrix should be symmetric')
 
         # Check it is positive definite
-        eigs = np.linalg.eigvalsh(cov_xxpp)
+        eigs = np.linalg.eigvalsh(cov_xxpp)  # cov_xxpp should be Hermitian
         if np.any(eigs <= 0):
             raise ValueError('Input matrix should be positive definite')
 
