@@ -8,6 +8,8 @@ import interferometer as itf
 from src.gbs_matrices import GraphMatrices, GaussianMatrices
 from src.utils import MatrixUtils
 
+# Construct experiment
+
 class PureGBS:
 
     def __init__(self, M):
@@ -16,29 +18,9 @@ class PureGBS:
         """
         self.M = M
         self._B = None
-
-    @staticmethod
-    def random_interferometer(M, depth):
-        I = itf.Interferometer()
-
-        for k in range(depth):
-            p = M // 2
-            q = M % 2
-            if k % 2 != 0 and q == 0:
-                shift = 1
-            else:
-                shift = 0
-
-            for i in range(p - shift):
-                j = 2 * i + 1 + k % 2  # Clements interferometer mode index starts from 1
-                phase = 0.5 * random.random() * np.pi
-                angle = 0.5 * random.random() * np.pi
-
-                bs = itf.Beamsplitter(j, j + 1, angle, phase)
-
-                I.add_BS(bs)
-
-        return I
+        self.alphas = np.zeros(M)
+        self.rs = np.zeros(M)
+        self.U = np.identity(M)
 
     def add_interferometer(self, U):
 
@@ -97,7 +79,27 @@ class PureGBS:
 
         return GraphMatrices.Gamma(cov_fock, self.calc_d_fock())
 
+    def calc_half_gamma(self):
+        Gamma = self.calc_Gamma()
 
+        return Gamma[:self.M]
 
+    def generate_unweighted_adj(self):
+        """Generates adjacency matrix for unweighted loopless graph on which we calculate the matching polynomial"""
 
+        B = self.calc_B()
+        B = MatrixUtils.filldiag(B, np.zeros(self.M))
+        adj = (B != 0)
+
+        return adj.astype(int)
+
+    def generate_weighted_adj(self):
+        """Generates adjacency matrix for weighted loopless graph on which we calculate the matching polynomial,
+        in other words this is the edge activities matrix x"""
+
+        B = self.calc_B()
+        half_gamma = self.calc_half_gamma()
+
+        x = B / np.outer(half_gamma, half_gamma)
+        return x
 
