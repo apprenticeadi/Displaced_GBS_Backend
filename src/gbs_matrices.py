@@ -130,6 +130,12 @@ class GaussianMatrices:
         return cov_fock
 
     @staticmethod
+    def cov_xxpp_from_A(A, dtype=np.complex64):
+        cov_fock = GaussianMatrices.cov_fock_from_A(A, dtype=dtype)
+
+        return Symplectic.matrix_fock_to_xxpp(cov_fock)
+
+    @staticmethod
     def sigma_Q_from_A(A, dtype=np.complex64):
         if not GraphMatrices.is_valid_Amat(A):
             raise Exception('Input matrix is not valid A matrix')
@@ -153,6 +159,12 @@ class GaussianMatrices:
         d_conj = gamma @ sigma_Q
 
         return d_conj.conjugate()
+
+    @staticmethod
+    def mu_xxpp_from_A(A, gamma, dtype=np.complex64):
+        mu_fock = GaussianMatrices.mu_xxpp_from_A(A, gamma, dtype=dtype)
+
+        return Symplectic.vector_fock_to_xxpp(mu_fock)
 
     @staticmethod
     def is_valid_xxpp_cov(cov_xxpp, tol=1e-7):

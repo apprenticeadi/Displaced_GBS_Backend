@@ -1,12 +1,13 @@
 import numpy as np
 import random
-
-
-# TODO: Need to clean this up and make it compatible with networkx
+import warnings
 
 class RandomGraph:
 
     def __init__(self, M, max_degree):
+
+        warnings.warn('This class is deprecated')
+
         if max_degree > M:
             raise ValueError('Maximum degree must be attainable and cannot be larger than number of vertices')
 

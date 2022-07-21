@@ -79,7 +79,6 @@ class PureGBS:
         B = self.calc_B()
         return GraphMatrices.pure_A_from_B(B)
 
-
     def calc_cov_fock(self):
         A = self.calc_A()
 
