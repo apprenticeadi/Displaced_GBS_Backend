@@ -2,6 +2,7 @@ import os
 import pandas as pd
 import random
 import numpy as np
+import interferometer as itf
 
 class MatrixUtils:
 
@@ -97,3 +98,79 @@ class DFUtils:
         )
 
         return df, file_to_read
+
+class RandomUtils:
+
+    @staticmethod
+    def random_adj(M, max_degree):
+        """
+        Generate adjacency matrix for random unweighted loopless graph. No restrictions on the possible edges a vertex can have.
+
+        :param M: Number of vertices
+        :param max_degree: Maximum degree of the graph
+
+        :return: Adj: Adjacency matrix
+        """
+
+        adj = np.zeros((M, M), dtype=int)
+
+        unfilled_vertices = list(range((M)))
+        random.shuffle(unfilled_vertices)
+
+        for i, start_vertex in enumerate(unfilled_vertices):
+            end_vertices = unfilled_vertices.copy()
+            end_vertices.remove(start_vertex)
+            start_vertex_degree = adj[start_vertex, :].sum()
+
+            if i == 0:
+                # Force 0th vertex to attain max degree, so that the max degree is at least attained once
+                num_neighbour = max_degree
+            else:
+                num_neighbour = np.random.randint(0, min(max_degree + 1 - start_vertex_degree, M - i))
+            possible_edge_ends = np.random.choice(end_vertices, num_neighbour, replace=False)
+
+            for possible_edge_end in possible_edge_ends:
+                adj[start_vertex, possible_edge_end] = 1
+                adj[possible_edge_end, start_vertex] = 1
+
+                end_vertex_degree = adj[possible_edge_end, :].sum()
+                assert end_vertex_degree <= max_degree
+                if end_vertex_degree == max_degree:
+                    unfilled_vertices.remove(possible_edge_end)
+
+            if start_vertex_degree + num_neighbour == max_degree:
+                unfilled_vertices.remove(start_vertex)
+
+        return adj
+
+    @staticmethod
+    def random_interferometer(M, depth):
+        """
+        Generates random interferometer in Clements scheme, where angles for every phase shifter and beamsplitter
+        given by a random number between 0 and 0.5pi
+        :param M: Number of modes
+        :param depth: Depth of interferometer
+
+        :return: Interferometer object
+        """
+
+        I = itf.Interferometer()
+
+        for k in range(depth):
+            p = M // 2
+            q = M % 2
+            if k % 2 != 0 and q == 0:
+                shift = 1
+            else:
+                shift = 0
+
+            for i in range(p - shift):
+                j = 2 * i + 1 + k % 2  # Clements interferometer mode index starts from 1
+                phase = 0.5 * random.random() * np.pi
+                angle = 0.5 * random.random() * np.pi
+
+                bs = itf.Beamsplitter(j, j + 1, angle, phase)
+
+                I.add_BS(bs)
+
+        return I
