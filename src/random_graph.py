@@ -2,6 +2,8 @@ import numpy as np
 import random
 import warnings
 
+# This class is deprecated
+
 class RandomGraph:
 
     def __init__(self, M, max_degree):
