@@ -34,12 +34,19 @@ class AdjacencyMatrix:
         if np.any(half_gamma==0):
             raise ValueError('Input half_gamma vector should not have zeros')
 
+        # No additional edge activities
         if x is None:
             x = np.ones([M, M])
         else:
-            m,n = x.shape
-            if m != M or n != M:
-                raise ValueError('Input edge activities matrix should have compatible shape {}*{}'.format(self.M, self.M))
+            x = np.atleast_1d(x)
+            # Univariate edge activity
+            if x.shape == (1,):
+                x = np.ones([M, M]) * x
+            # Multivariate edge activity, one for each edge
+            else:
+                m,n = x.shape
+                if m != M or n != M:
+                    raise ValueError('Input edge activities matrix should have compatible shape {}*{}'.format(self.M, self.M))
 
         B = self.__adj * x * half_gamma * half_gamma[:, np.newaxis]
 
