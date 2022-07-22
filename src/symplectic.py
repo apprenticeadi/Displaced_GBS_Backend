@@ -12,6 +12,7 @@ class Symplectic:
 
     @staticmethod
     def matrix_fock_to_xxpp(matrix_fock):
+        matrix_fock = np.asarray(matrix_fock)
         (n,m) = matrix_fock.shape
         if n != m :
             raise ValueError('Input matrix should be square')
@@ -26,6 +27,7 @@ class Symplectic:
 
     @staticmethod
     def vector_fock_to_xxpp(vector_fock):
+        vector_fock=np.asarray(vector_fock)
         n = vector_fock.shape[0]
         if n % 2 != 0:
             raise ValueError('Input vector should have even number of elements')
@@ -38,6 +40,7 @@ class Symplectic:
 
     @staticmethod
     def matrix_xxpp_to_fock(matrix_xxpp):
+        matrix_xxpp = np.asarray(matrix_xxpp)
         (n, m) = matrix_xxpp.shape
         if n != m:
             raise ValueError('Input matrix should be square')
@@ -52,6 +55,7 @@ class Symplectic:
 
     @staticmethod
     def vector_xxpp_to_fock(vector_xxpp):
+        vector_xxpp = np.asarray(vector_xxpp)
         n = vector_xxpp.shape[0]
         if n % 2 != 0:
             raise ValueError('Input vector should have even number of elements')
@@ -63,7 +67,7 @@ class Symplectic:
         return vector_fock
 
 class SymplecticFock(Symplectic):
-    # Todo: This class borrows from thewalrus.symplectic, but in Fock basis instead. Need to check license.
+    # This class borrows from thewalrus.symplectic, but in Fock basis instead.
 
     @staticmethod
     def single_mode_squeezing(s, theta=None, dtype=np.complex64):
@@ -90,7 +94,7 @@ class SymplecticXXPP(Symplectic):
 
     @staticmethod
     def single_mode_squeezing(s, theta=None, dtype=np.float64):
-        # Todo: this function the same as thewalrus.symplectic.squeezing
+        # this function the same as thewalrus.symplectic.squeezing
 
         s = np.atleast_1d(s)  # converts inputs into arrays of at least 1 dimension
 
