@@ -25,7 +25,11 @@ class AdjacencyMatrix:
 
         return copy.deepcopy(self.__adj)
 
-    def generate_B_matrix(self, half_gamma, x=None):
+    def generate_B(self, half_gamma, x=None):
+        """
+        Generate B matrix from the graph: B_ij = a_ij * x_ij * gamma_i * gamma_j
+        """
+
         M = self.M
         half_gamma = np.asarray(half_gamma)
 
