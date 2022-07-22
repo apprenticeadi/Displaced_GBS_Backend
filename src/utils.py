@@ -3,6 +3,10 @@ import pandas as pd
 import random
 import numpy as np
 import interferometer as itf
+import sys
+import logging
+import datetime
+
 
 class MatrixUtils:
 
@@ -33,48 +37,6 @@ class MatrixUtils:
 
         return A
 
-    @staticmethod
-    def random_adj(M, max_degree):
-        """
-        Generate adjacency matrix for random unweighted loopless graph. No restrictions on the possible edges a vertex can have.
-
-        :param M: Number of vertices
-        :param max_degree: Maximum degree of the graph
-
-        :return: Adj: Adjacency matrix
-        """
-
-        adj = np.zeros((M, M), dtype=int)
-
-        unfilled_vertices = list(range((M)))
-        random.shuffle(unfilled_vertices)
-
-        for i, start_vertex in enumerate(unfilled_vertices):
-            end_vertices = unfilled_vertices.copy()
-            end_vertices.remove(start_vertex)
-            start_vertex_degree = adj[start_vertex, :].sum()
-
-            if i == 0:
-                # Force 0th vertex to attain max degree, so that the max degree is at least attained once
-                num_neighbour = max_degree
-            else:
-                num_neighbour = np.random.randint(0, min(max_degree + 1 - start_vertex_degree, M - i))
-            possible_edge_ends = np.random.choice(end_vertices, num_neighbour, replace=False)
-
-            for possible_edge_end in possible_edge_ends:
-                adj[start_vertex, possible_edge_end] = 1
-                adj[possible_edge_end, start_vertex] = 1
-
-                end_vertex_degree = adj[possible_edge_end, :].sum()
-                assert end_vertex_degree <= max_degree
-                if end_vertex_degree == max_degree:
-                    unfilled_vertices.remove(possible_edge_end)
-
-            if start_vertex_degree + num_neighbour == max_degree:
-                unfilled_vertices.remove(start_vertex)
-
-        return adj
-
 
 class DFUtils:
 
@@ -98,6 +60,7 @@ class DFUtils:
         )
 
         return df, file_to_read
+
 
 class RandomUtils:
 
@@ -174,3 +137,23 @@ class RandomUtils:
                 I.add_BS(bs)
 
         return I
+
+
+class LogUtils:
+
+    @staticmethod
+    def log_config(time_stamp, dir=None, filehead='', module_name='', level=logging.INFO):
+        # time_stamp = datetime.datetime.now().strftime("%d-%b-%Y-(%H.%M.%S.%f)")
+        if dir is None:
+            dir = r'..\Results\logs'
+        logging_filename = dir + r'\{}_{}.txt'.format(filehead, time_stamp)
+        os.makedirs(os.path.dirname(logging_filename), exist_ok=True)
+
+        stdout_handler = logging.StreamHandler(sys.stdout)
+
+        logging.basicConfig(filename=logging_filename, level=level,
+                            format='%(levelname)s %(asctime)s %(message)s')
+
+        # make logger print to console (it will not if multithreaded)
+        logging.getLogger(module_name).addHandler(stdout_handler)
+
