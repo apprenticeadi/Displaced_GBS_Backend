@@ -64,7 +64,7 @@ class PureGBS:
     def calc_cov_fock(self):
         A = self.calc_A()
 
-        return GaussianMatrices.cov_fock_from_A(A)
+        return GaussianMatrices.cov_fock(A)
 
     def calc_d_fock(self):
         """
@@ -99,6 +99,8 @@ class PureGBS:
 
         B = self.calc_B()
         half_gamma = self.calc_half_gamma()
+        if np.any(half_gamma == 0):
+            raise Exception('Cannot transform into matching polynomial graph as some modes are undisplaced. ')
 
         x = B / np.outer(half_gamma, half_gamma)
         return x
