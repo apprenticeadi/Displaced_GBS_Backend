@@ -47,7 +47,7 @@ class MatchingGraph(AdjacencyGraph):
 
         :param adj: Adjacency of the graph
         :param half_gamma: Half gamma vector that fills B diagonal when calculating lHaf
-        :param v: v vector that fills B diagonal when calculating the experiment setup
+        :param v: v vector that fills B diagonal when calculating the experiment setup. Default is zero vector if don't specify.
         :param r_max: The maximum squeezing paramter in the experiment
         :param x: Edge activity.
         """
@@ -58,6 +58,8 @@ class MatchingGraph(AdjacencyGraph):
 
 
         self.set_half_gamma(half_gamma)
+        if v is None:
+            v = np.zeros[M]
         self.set_v(v)
         self.set_r_max(r_max)
         self.set_x(x)
@@ -74,12 +76,11 @@ class MatchingGraph(AdjacencyGraph):
             self.half_gamma = half_gamma
 
     def set_v(self, v):
-        if v is None:
-            self.v = None
+        v = np.asarray(v)
+        if v.shape[0]!=self.M:
+            raise ValueError('Input v vector for B diagonal should have compatible length {}'.format(self.M))
         else:
-            v = np.asarray(v)
-            if v.shape[0]!=self.M:
-                raise ValueError('Input v vector for B diagonal should have compatible length {}'.format(self.M))
+            self.v = v
 
     def set_r_max(self, r_max):
         if r_max is None:
@@ -118,6 +119,7 @@ class MatchingGraph(AdjacencyGraph):
             raise AttributeError('Half gamma vector not defined')
 
         B = self.__adj * self.x * self.half_gamma * self.half_gamma[:, np.newaxis]
+        B = MatrixUtils.filldiag(B, self.v)
 
         return B
 
