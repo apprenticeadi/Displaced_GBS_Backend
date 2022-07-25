@@ -6,102 +6,88 @@ import matplotlib.pyplot as plt
 
 from strawberryfields.decompositions import takagi
 
-from src.utils import MatrixUtils, DFUtils
-from src.random_graph import RandomGraph
-from src.gbs_matrices import GraphMatrices, GaussianMatrices
-from src.log_utils import LogUtils
+from src.utils import MatrixUtils, DFUtils, LogUtils, RandomUtils
+from src.gbs_matrix import GBSMatrix, GaussianMatrix
+from src.adjacency_graph import MatchingGraph
 
 # <<<<<<<<<<<<<<<<<<< Parameters  >>>>>>>>>>>>>>>>>>
-xs = [-1000, -500, -100, -50, -10, -5, -4, -3, -2, -1, 1, 2 , 3, 4, 5, 10, 50, 100, 500, 1000 ]  # edge activity
-r_max = 1  # maximum squeezing available in experiment
-gamma_low = 1
-gamma_high = np.sqrt(10)
-M_list = [5, 8, 10, 13, 15, 18, 20]
+xs = [-1000, -500, -100, -50, -10, -5, -4, -3, -2, -1, -0.5, -0.25, -0.125, -0.1, -0.09, -0.08, -0.07, -0.06, -0.05,
+      -0.04, -0.03, -0.02, -0.01, 0.01, 0.05, 0.1, 0.3, 0.5, 0.8, 1, 2, 3, 4, 5, 10, 50, 100, 500, 1000]  # edge activity
+Ms = [10, 20, 30, 50, 100]
+
+# <<<<<<<<<<<<<<<<<<< Fixed parameters (if any)  >>>>>>>>>>>>>>>>>>
+delta = 5
+bound = - 1 / (4*delta - 4)
+r_max = 0.75
 
 # <<<<<<<<<<<<<<<<<<< Logging  >>>>>>>>>>>>>>>>>>
 time_stamp = datetime.datetime.now().strftime("%d-%m-%Y(%H-%M-%S.%f)")
 dir = r'..\Results\probe_x\{}'.format(time_stamp)
 LogUtils.log_config(time_stamp='', dir=dir, filehead='log', module_name='', level=logging.INFO)
 
-logging.info('edge activities x={}, r_max={}, gamma_low={}, gamma_high={}, M_list={}'
-             .format(xs, r_max, gamma_low, gamma_high, M_list))
-
+logging.info('Probing the physical meaning of x. Mode M ={}, edge activity xs={}. Fix max_degree={}, r_max={}'.format(
+    Ms, xs, delta, r_max
+))
 
 # <<<<<<<<<<<<<<<<<<< Plotting  >>>>>>>>>>>>>>>>>>
 # sq photons
 fig1, ax1 = plt.subplots()
 ax1.set_title('Average squeezed photons')
-ax1.set_xlabel('|x|')
+ax1.set_xlabel('x')
 ax1.set_ylabel('n_sq')
-ax1.set_xscale('log')
+ax1.set_xscale('symlog')
 color_cycler = fig1.gca()._get_lines.prop_cycler
 
 # cl photons
 fig2, ax2 = plt.subplots()
 ax2.set_title('Average classical photons')
-ax2.set_xlabel('|x|')
+ax2.set_xlabel('x')
 ax2.set_ylabel('n_cl')
 ax2.set_yscale('log')
-ax1.set_xscale('log')
+ax2.set_xscale('symlog')
 
 # sq/cl
 fig3, ax3 = plt.subplots()
 ax3.set_title('Photon number ratio squeezed/classical')
-ax3.set_xlabel('|x|')
+ax3.set_xlabel('x')
 ax3.set_ylabel('n_sq/n_cl')
 ax3.set_yscale('log')
-ax1.set_xscale('log')
+ax3.set_xscale('symlog')
+ax3.axvline(x=bound, ls=':', label='-1/(4*delta-4)')
 
-for M in M_list:
-    # <<<<<<<<<<<<<<<<<<< Graph  >>>>>>>>>>>>>>>>>>
-    delta = max(3, int(0.5 * M))  # maximum degree
-    graph_G = RandomGraph(M=M, max_degree=delta)
+for M in Ms:
 
-    logging.info('')
-    logging.info('M={} and max degree={}'.format(M, delta))
-    logging.info('Graph adjacency matrix is \n{}'.format(graph_G.adjacency_matrix()))
+    # <<<<<<<<<<<<<<<<<<< Fixed parameters  >>>>>>>>>>>>>>>>>>
+    half_gamma = np.ones(M)
+    v = np.ones(M)
 
-    # <<<<<<<<<<<<<<<<<<< half gamma vector  >>>>>>>>>>>>>>>>>>
-    half_gamma = np.random.uniform(low=gamma_low, high=gamma_high, size=M)
+    bound = -1 / (4 * (delta - 1))
 
-    logging.info('half_gamma={}'.format(half_gamma))
+    adj = RandomUtils.random_adj(M, delta)
+    graph = MatchingGraph(adj, half_gamma=half_gamma, v=v, r_max=r_max)
 
-    # <<<<<<<<<<<<<<<<<<< B diagonal  >>>>>>>>>>>>>>>>>>
-    v = np.array([10] * M)
+    logging.info('For M={}, construct adj=\n'
+                 '{}\n'
+                 'Set half_gamma={}, v={}'.format(
+        M, adj, half_gamma, v,
+    ))
 
-    logging.info('B diagonal v vector = {}'.format(v))
+    np.save(dir + r'\adj_M={}_delta={}'.format(M, delta), adj)
 
-    # <<<<<<<<<<<<<<<<<<< Data file  >>>>>>>>>>>>>>>>>>
     save_filename = DFUtils.create_filename(
         dir + r'\M={}_delta={}.csv'.format(M, delta))
     sq_phots = []
     coh_phots = []
 
     for idx, x in enumerate(xs):
+        logging.info('x={}'.format(x))
+        graph.set_x(x)
+        sq, displacement, U = graph.generate_experiment()
 
-        Bmat = graph_G.generate_Bmatrix(x, half_gamma)
-        Bmat = MatrixUtils.filldiag(Bmat, v)
+        logging.info('sq = {}, displacement = {}, U={}'.format(sq, displacement, U))
 
-        # <<<<<<<<<<<<<<<<<<< rescale cB and Gamma >>>>>>>>>>>>>>>>>>
-        eigs_B = np.linalg.eigvalsh(Bmat)
-        c_factor = np.tanh(r_max) / abs(max(eigs_B, key=abs))
-        cB = c_factor * Bmat
-        Gamma = np.sqrt(c_factor) * np.concatenate([half_gamma, half_gamma.conjugate()])
-
-        # <<<<<<<<<<<<<<<<<<< experimental parameters >>>>>>>>>>>>>>>>>>
-        Amat = GraphMatrices.pure_A_from_B(cB)
-        mu_fock = GaussianMatrices.mu_fock_from_A(Amat, Gamma)
-        tanhr, U = takagi(cB)
-
-        sq = np.arctanh(tanhr)
-        displacement = mu_fock[:M]
-        logging.info('sq = {}, displacement = {}'.format(sq, displacement))
-
-        sq_phot = np.sum(np.sinh(sq) ** 2)
-        coh_phot = np.sum(displacement * displacement.conjugate()).real
-
-        sq_phots.append(sq_phot)
-        coh_phots.append(coh_phot)
+        sq_phots.append(np.sum(np.sinh(sq) ** 2))
+        coh_phots.append(np.sum(displacement * displacement.conjugate()).real)
 
     sq_phots = np.array(sq_phots)
     coh_phots = np.array(coh_phots)

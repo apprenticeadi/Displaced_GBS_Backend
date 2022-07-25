@@ -118,7 +118,7 @@ class MatchingGraph(AdjacencyGraph):
         if self.half_gamma is None:
             raise AttributeError('Half gamma vector not defined')
 
-        B = self.__adj * self.x * self.half_gamma * self.half_gamma[:, np.newaxis]
+        B = self.get_adj() * self.x * self.half_gamma * self.half_gamma[:, np.newaxis]
         B = MatrixUtils.filldiag(B, self.v)
 
         return B
