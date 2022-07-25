@@ -114,4 +114,4 @@ fig2.savefig(dir+r'\cl_phot.pdf')
 ax3.legend()
 fig3.savefig(dir+r'\sq_div_cl.pdf')
 
-logging.info('Ferrari')
+logging.info('Lamborghini')
