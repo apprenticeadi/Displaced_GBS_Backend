@@ -3,7 +3,7 @@ import random
 
 from strawberryfields.decompositions import williamson, bloch_messiah, takagi
 
-from src.gbs_matrices import GraphMatrices, GaussianMatrices
+from src.gbs_matrices import GBSMatrix, GaussianMatrix
 from src.symplectic import Symplectic, SymplecticFock, SymplecticXXPP
 
 # Some further assumptions in the script but not in notes:
@@ -70,13 +70,13 @@ O_mat = np.zeros_like(B_matrix)
 cB = c_factor * B_matrix
 A_mat = np.block([[cB, O_mat], [O_mat, cB]])
 
-assert GraphMatrices.is_valid_Amat(A_mat) == True
+assert GBSMatrix.is_valid_Amat(A_mat) == True
 
 # <<<<<<<<<<<<<<<<<<< Construct Gaussian matrices  >>>>>>>>>>>>>>>>>>
-Sigma_fock = GaussianMatrices.cov_fock_from_A(A_mat, dtype=np.float64)
+Sigma_fock = GaussianMatrix.cov_fock(A_mat, dtype=np.float64)
 Sigma_xxpp = Symplectic.matrix_fock_to_xxpp(Sigma_fock)  # The williamson function only works for real symmetric matrix
 
-mu_fock = GaussianMatrices.mu_fock_from_A(A_mat, gamma, dtype=np.float64)
+mu_fock = GaussianMatrix.mu_fock_from_A(A_mat, gamma, dtype=np.float64)
 mu_xxpp = Symplectic.vector_fock_to_xxpp(mu_fock)
 
 

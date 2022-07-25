@@ -1,7 +1,3 @@
-import interferometer as itf
-import numpy as np
-import random
-
 from src.gbs_experiment import PureGBS
 
 M = 20
