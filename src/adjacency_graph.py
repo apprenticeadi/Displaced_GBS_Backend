@@ -59,7 +59,7 @@ class MatchingGraph(AdjacencyGraph):
 
         self.set_half_gamma(half_gamma)
         if v is None:
-            v = np.zeros[M]
+            v = np.zeros(M)
         self.set_v(v)
         self.set_r_max(r_max)
         self.set_x(x)
