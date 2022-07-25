@@ -48,7 +48,7 @@ class MatchingGraph(UnloopedGraph):
     """
     Graph on which the matching polynomial is defined.
     """
-    def __init__(self, adj, half_gamma, v, r_max, x=None):
+    def __init__(self, adj, half_gamma=None, v=None, r_max=None, x=None):
         """
         Generate graph on which the matching polynomial is calculated
 
@@ -59,24 +59,44 @@ class MatchingGraph(UnloopedGraph):
         :param x: Edge activity.
         """
         super().__init__(adj)
+
+        self.set_half_gamma(half_gamma)
+        self.set_v(v)
+        self.set_r_max(r_max)
+        self.set_x(x)
+
+    def set_half_gamma(self, half_gamma):
+        if half_gamma is None:
+            self.half_gamma = None
+        else:
+            half_gamma = np.asarray(half_gamma)
+            if half_gamma.shape[0] != self.M:
+                raise ValueError('Input half_gamma vector should have compatible length {}'.format(self.M))
+            if np.any(half_gamma == 0):
+                raise ValueError('Input half_gamma vector should not have zeros')
+            self.half_gamma = half_gamma
+
+    def set_v(self, v):
+        if v is None:
+            self.v = None
+        else:
+            v = np.asarray(v)
+            if v.shape[0]!=self.M:
+                raise ValueError('Input v vector for B diagonal should have compatible length {}'.format(self.M))
+
+    def set_r_max(self, r_max):
+        if r_max is None:
+            self.r_max = None
+        else:
+            if r_max.imag == 0:
+                self.r_max = r_max
+            else:
+                raise ValueError('Input r_max must be real.')
+
+    def set_x(self, x):
         M = self.M
-
-        half_gamma = np.asarray(half_gamma)
-        v = np.asarray(v)
-
-        if half_gamma.shape[0] != M:
-            raise ValueError('Input half_gamma vector should have compatible length {}'.format(self.M))
-        if np.any(half_gamma == 0):
-            raise ValueError('Input half_gamma vector should not have zeros')
-        if v.shape[0]!=M:
-            raise ValueError('Input v vector for B diagonal should have compatible length {}'.format(self.M))
-
-        self.half_gamma = half_gamma
-        self.v = v
-        self.r_max = r_max
-        # No additional edge activities
         if x is None:
-            self.x = np.ones([M, M])
+            self.x = None
         else:
             x = np.atleast_1d(x)
             # Univariate edge activity
@@ -87,7 +107,7 @@ class MatchingGraph(UnloopedGraph):
                 m, n = x.shape
                 if m != M or n != M:
                     raise ValueError(
-                        'Input edge activities matrix should have compatible shape {}*{}'.format(self.M, self.M))
+                        'Multivariate edge activities matrix should have compatible shape {}*{}'.format(M, M))
                 else:
                     self.x = x
 
@@ -95,6 +115,10 @@ class MatchingGraph(UnloopedGraph):
         """
         Generate B matrix from the graph: B_ij = a_ij * x_ij * gamma_i * gamma_j
         """
+        if self.x is None:
+            raise AttributeError('Edge activity not defined')
+        if self.half_gamma is None:
+            raise AttributeError('Half gamma vector not defined')
 
         B = self.__adj * self.x * self.half_gamma * self.half_gamma[:, np.newaxis]
 
