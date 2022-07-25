@@ -4,7 +4,7 @@ from strawberryfields.decompositions import takagi
 
 from src.utils import MatrixUtils
 from src.random_graph import RandomGraph
-from src.gbs_matrices import GraphMatrices, GaussianMatrices
+from src.gbs_matrix import GBSMatrix, GaussianMatrix
 
 M = 15
 delta = 10  # maximum degree
@@ -23,8 +23,8 @@ c_factor = np.tanh(r_max) / abs(max(eigs_B, key=abs))
 cB= c_factor * Bmat
 gamma = np.sqrt(c_factor) * np.concatenate([half_gamma, half_gamma.conjugate()])
 
-Amat = GraphMatrices.pure_A_from_B(cB)
-mu_fock = GaussianMatrices.mu_fock_from_A(Amat, gamma)
+Amat = GBSMatrix.pure_A_from_B(cB)
+mu_fock = GaussianMatrix.d_fock(Amat, gamma)
 tanhr, U = takagi(cB)
 
 sq = np.arctanh(tanhr)
