@@ -66,10 +66,8 @@ for M in Ms:
     adj = RandomUtils.random_adj(M, delta)
     graph = MatchingGraph(adj, half_gamma=half_gamma, v=v, r_max=r_max)
 
-    logging.info('For M={}, construct adj=\n'
-                 '{}\n'
-                 'Set half_gamma={}, v={}'.format(
-        M, adj, half_gamma, v,
+    logging.info('M={}. Set half_gamma={}, v={}'.format(
+        M, half_gamma, v,
     ))
 
     np.save(dir + r'\adj_M={}_delta={}'.format(M, delta), adj)
@@ -80,11 +78,11 @@ for M in Ms:
     coh_phots = []
 
     for idx, x in enumerate(xs):
-        logging.info('x={}'.format(x))
         graph.set_x(x)
         sq, displacement, U = graph.generate_experiment()
 
-        logging.info('sq = {}, displacement = {}, U={}'.format(sq, displacement, U))
+        logging.info('x={}, sq = {}, displacement = {}'.format(x, sq, displacement))
+        np.save(dir+r'\U_M={}_delta={}'.format(M,delta), U)
 
         sq_phots.append(np.sum(np.sinh(sq) ** 2))
         coh_phots.append(np.sum(displacement * displacement.conjugate()).real)
