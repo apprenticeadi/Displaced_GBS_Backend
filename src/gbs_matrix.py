@@ -9,11 +9,11 @@ from src.utils import MatrixUtils
 
 # Todo: the dtype and tol arguments are a bit messy. Try cleaning it up.
 
-class GraphMatrices:
+class GBSMatrix:
     """
-    Class of functions for generating graph matrices from Fock basis Gaussian matrices.
-    Graph matrices are the A matrix, the B matrix for pure state, and the Gamma vector. These matrices appear in the
-    loop Hafnian calculation.
+    GBS Matrices refer to the matrices and vectors that appear in the loop Hafnian calculation. Specifically they are
+    the A marix, the B matrix and the Gamma vector.
+    This class gives functions for generating GBS matrices from Fock basis Gaussian matrices.
     """
 
     @staticmethod
@@ -38,13 +38,13 @@ class GraphMatrices:
     def Amat(cov_fock):
         cov_fock = np.asarray(cov_fock)
 
-        if not GaussianMatrices.is_valid_cov_fock(cov_fock):
+        if not GaussianMatrix.is_valid_cov_fock(cov_fock):
             raise ValueError('Input matrix is not valid fock base covariance matrix')
 
         M = cov_fock.shape[0] // 2
 
         cov_Q = cov_fock + np.identity(2 * M) / 2
-        X = GraphMatrices.Xmat(M)
+        X = GBSMatrix.Xmat(M)
         I = np.identity(2 * M)
 
         return X @ (I - np.linalg.inv(cov_Q))
@@ -69,10 +69,10 @@ class GraphMatrices:
         :return: The 2M Gamma vector that fills A diagonal when calculating loop Hafnian.
         """
         cov_fock = np.asarray(cov_fock)
-        if not GaussianMatrices.is_valid_cov_fock(cov_fock):
+        if not GaussianMatrix.is_valid_cov_fock(cov_fock):
             raise ValueError('Input matrix is not valid fock base covariance matrix')
         d_fock = np.asarray(d_fock)
-        if not GaussianMatrices.is_valid_d_fock(d_fock):
+        if not GaussianMatrix.is_valid_d_fock(d_fock):
             raise ValueError('Input vector is not valid fock base means vector')
 
         M = cov_fock.shape[0] // 2
@@ -124,7 +124,7 @@ class GraphMatrices:
         Amat = np.asarray(Amat)
         M = Amat.shape[0] // 2
 
-        if not GraphMatrices.is_valid_Amat(Amat):  # If this step doesn't return error, then off diagonal C1=C2.T
+        if not GBSMatrix.is_valid_Amat(Amat):  # If this step doesn't return error, then off diagonal C1=C2.T
             raise ValueError('Input matrix is not valid A matrix')
 
         C1 = Amat[:M, M:]
@@ -153,8 +153,8 @@ class GraphMatrices:
         return True
 
 
-class GaussianMatrices:
-    """Class of functions for generating covariance matrix and means vector from graph matrices"""
+class GaussianMatrix:
+    """Class of functions for generating covariance matrix and means vector from GBS matrices"""
 
     @staticmethod
     def vacuum(M, dtype=np.float64):
@@ -165,11 +165,11 @@ class GaussianMatrices:
     def cov_fock(A):
         A = np.asarray(A)
 
-        if not GraphMatrices.is_valid_Amat(A):
+        if not GBSMatrix.is_valid_Amat(A):
             raise Exception('Input matrix is not valid A matrix')
 
         M = A.shape[0] // 2
-        X = GraphMatrices.Xmat(M)
+        X = GBSMatrix.Xmat(M)
 
         cov_Q_inv = np.identity(2 * M) - X @ A
         cov_Q = np.linalg.inv(cov_Q_inv)
@@ -180,7 +180,7 @@ class GaussianMatrices:
 
     @staticmethod
     def cov_xxpp(A):
-        cov_fock = GaussianMatrices.cov_fock(A)
+        cov_fock = GaussianMatrix.cov_fock(A)
 
         return Symplectic.matrix_fock_to_xxpp(cov_fock)
 
@@ -188,11 +188,11 @@ class GaussianMatrices:
     def cov_Q(A):
         A = np.asarray(A)
 
-        if not GraphMatrices.is_valid_Amat(A):
+        if not GBSMatrix.is_valid_Amat(A):
             raise Exception('Input matrix is not valid A matrix')
 
         M = A.shape[0] // 2
-        X = GraphMatrices.Xmat(M)
+        X = GBSMatrix.Xmat(M)
 
         cov_Q_inv = np.identity(2 * M) - X @ A
         cov_Q = np.linalg.inv(cov_Q_inv)
@@ -206,7 +206,7 @@ class GaussianMatrices:
         if A.shape[0] != Gamma.shape[0]:
             raise ValueError('Input matrix and vector should have compatible shape')
 
-        cov_Q = GaussianMatrices.cov_Q(A)
+        cov_Q = GaussianMatrix.cov_Q(A)
 
         d_conj = Gamma @ cov_Q
 
@@ -214,7 +214,7 @@ class GaussianMatrices:
 
     @staticmethod
     def d_xxpp(A, Gamma):
-        d_fock = GaussianMatrices.d_fock(A, Gamma)
+        d_fock = GaussianMatrix.d_fock(A, Gamma)
 
         return Symplectic.vector_fock_to_xxpp(d_fock)
 
@@ -268,7 +268,7 @@ class GaussianMatrices:
         # real symmetric
         cov_xxpp = Symplectic.matrix_fock_to_xxpp(cov_fock)
 
-        return GaussianMatrices.is_valid_cov_xxpp(cov_xxpp, tol=tol)
+        return GaussianMatrix.is_valid_cov_xxpp(cov_xxpp, tol=tol)
 
     @staticmethod
     def is_valid_d_fock(d_fock):
