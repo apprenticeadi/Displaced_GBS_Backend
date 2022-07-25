@@ -5,7 +5,7 @@ import copy
 
 import interferometer as itf
 
-from src.gbs_matrices import GraphMatrices, GaussianMatrices
+from src.gbs_matrix import GBSMatrix, GaussianMatrix
 from src.utils import MatrixUtils
 
 # Construct experiment
@@ -24,7 +24,7 @@ class PureGBS:
 
     def add_interferometer(self, U):
 
-        if not GaussianMatrices.is_valid_U(U):
+        if not GaussianMatrix.is_valid_U(U):
             raise ValueError('Input matrix is not valid unitary interferometer')
 
         n = U.shape[0]
@@ -59,12 +59,12 @@ class PureGBS:
 
     def calc_A(self):
         B = self.calc_B()
-        return GraphMatrices.pure_A_from_B(B)
+        return GBSMatrix.pure_A_from_B(B)
 
     def calc_cov_fock(self):
         A = self.calc_A()
 
-        return GaussianMatrices.cov_fock(A)
+        return GaussianMatrix.cov_fock(A)
 
     def calc_d_fock(self):
         """
@@ -77,7 +77,7 @@ class PureGBS:
 
         cov_fock = self.calc_cov_fock()
 
-        return GraphMatrices.Gamma(cov_fock, self.calc_d_fock())
+        return GBSMatrix.Gamma(cov_fock, self.calc_d_fock())
 
     def calc_half_gamma(self):
         Gamma = self.calc_Gamma()

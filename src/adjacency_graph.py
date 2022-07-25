@@ -5,7 +5,7 @@ import copy
 from strawberryfields.decompositions import takagi
 
 from src.utils import MatrixUtils
-from src.gbs_matrices import GBSMatrix, GaussianMatrix
+from src.gbs_matrix import GBSMatrix, GaussianMatrix
 
 class AdjacencyGraph:
     """
