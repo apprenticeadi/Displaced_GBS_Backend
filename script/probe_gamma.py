@@ -21,7 +21,7 @@ r_max = 0.75
 
 # <<<<<<<<<<<<<<<<<<< Logging  >>>>>>>>>>>>>>>>>>
 time_stamp = datetime.datetime.now().strftime("%d-%m-%Y(%H-%M-%S.%f)")
-dir = r'..\Results\probe_x\{}'.format(time_stamp)
+dir = r'..\Results\probe_gamma\{}'.format(time_stamp)
 LogUtils.log_config(time_stamp='', dir=dir, filehead='log', module_name='', level=logging.INFO)
 
 logging.info('Probing the physical meaning of half_gamma. Mode M ={}. Fix max_degree={}, r_max={}, edge activity x={}. '
