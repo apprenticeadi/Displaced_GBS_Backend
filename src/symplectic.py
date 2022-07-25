@@ -11,6 +11,15 @@ class Symplectic:
         return L
 
     @staticmethod
+    def Omegamat(M, dtype=np.float64):
+        I = np.identity(M, dtype=dtype)
+        O = np.zeros_like(I)
+
+        Omega = np.block([[O, I], [-I, O]])
+
+        return Omega
+
+    @staticmethod
     def matrix_fock_to_xxpp(matrix_fock):
         matrix_fock = np.asarray(matrix_fock)
         (n,m) = matrix_fock.shape

@@ -6,25 +6,25 @@ import interferometer as itf
 import sys
 import logging
 import datetime
-
+import copy
 
 class MatrixUtils:
 
     @staticmethod
     def remove_small(a, tol=1e-7):
         """
-        :param a: Any complex np array
+        :param a: Any np array or list
         :param tol: Relative tolerance compared to the average
         :return: a with small elements removed
         """
-
-        a_flat = a.flatten()
+        anew = copy.deepcopy(np.asarray(a, dtype=np.complex64))
+        a_flat = anew.flatten()
         av = a_flat.sum() / a_flat.shape[0]
 
-        a.real[abs(a.real) / abs(av.real) < tol] = 0.0
-        a.imag[abs(a.imag) / abs(av.imag) <tol] = 0.0
+        anew.real[abs(anew.real) / abs(av) < tol] = 0.0
+        anew.imag[abs(anew.imag) / abs(av) <tol] = 0.0
 
-        return a
+        return anew
 
     @staticmethod
     def filldiag(A, gamma):

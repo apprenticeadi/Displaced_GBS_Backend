@@ -46,9 +46,9 @@ class PureGBS:
         # Cautious: numpy arrays are mutable, so instance attributes will change if tamper with the array outside the class!
 
         if self._B is None:
-            D = np.identity(self.M)
+            Id = np.identity(self.M)
             v = np.tanh(self.rs)
-            D = MatrixUtils.filldiag(D, v)
+            D = MatrixUtils.filldiag(Id, v)
             B = self.U @ D @ self.U.T
 
             self._B = copy.deepcopy(B)

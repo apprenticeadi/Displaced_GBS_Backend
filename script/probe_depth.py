@@ -1,15 +1,14 @@
 import numpy as np
-import random
 import networkx as nx
 import matplotlib.pyplot as plt
 
 from src.gbs_experiment import PureGBS
-from src.utils import MatrixUtils
+from src.utils import RandomUtils, MatrixUtils
 
 M = 20
 depth = 5
 
-r = 5
+r = 0.75
 rs = np.ones(M) * r
 
 alpha = 1
@@ -17,24 +16,20 @@ alphas = np.ones(M) * alpha
 
 gbs = PureGBS(M)
 
-I = PureGBS.random_interferometer(M, depth)
+# <<<<<<<<<<<<<<<<<<< Interferometer  >>>>>>>>>>>>>>>>>>
+I = RandomUtils.random_interferometer(M, depth)
 U = I.calculate_transformation()
+#
+# I.draw()
 
-I.draw()
-
+# <<<<<<<<<<<<<<<<<<< Experiment  >>>>>>>>>>>>>>>>>>
 gbs.add_interferometer(U)
 gbs.add_squeezing(rs)
 gbs.add_coherent(alphas)
 
-# <<<<<<<<<<<<<<<<<<< B matrix  >>>>>>>>>>>>>>>>>>
-B = gbs.calc_B()
-B = MatrixUtils.filldiag(B, np.zeros(M))
-gamma = gbs.calc_Gamma()[:M]
+# <<<<<<<<<<<<<<<<<<< Graph  >>>>>>>>>>>>>>>>>>
+x = gbs.generate_weighted_adj()
 
-# <<<<<<<<<<<<<<<<<<< edge activities  >>>>>>>>>>>>>>>>>>
-x = B / np.outer(gamma, gamma)
-
-# <<<<<<<<<<<<<<<<<<< adjacency matrix  >>>>>>>>>>>>>>>>>>
 adj = (x != 0)
 adj.astype(int)
 

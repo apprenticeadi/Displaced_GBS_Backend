@@ -224,8 +224,6 @@ class GaussianMatrix:
 
         (n, m) = cov_xxpp.shape
 
-        cov_xxpp = MatrixUtils.remove_small(cov_xxpp, tol)
-
         # Check it is square
         if n != m:
             raise ValueError('Input matrix should be square')
@@ -235,7 +233,7 @@ class GaussianMatrix:
             raise ValueError('Input matrix should have even number of rows and columns')
 
         # Check it is real
-        if not np.all(np.isreal(cov_xxpp)):
+        if not np.all(np.isreal(MatrixUtils.remove_small(cov_xxpp, tol))):
             raise ValueError('Input matrix should be real')
 
         # Check it is symmetric
@@ -251,7 +249,7 @@ class GaussianMatrix:
         # the williamson function actually checks for square, symmetric, even number and positive definiteness already
         D, _ = williamson(cov_xxpp)
         symp_eigs = np.diagonal(D)
-        if np.any(symp_eigs < 0.5):
+        if np.any(symp_eigs + tol < 0.5):  # TODO: is this valid?
             raise ValueError('Input matrix should satisfy uncertainty principle')
 
         return True
