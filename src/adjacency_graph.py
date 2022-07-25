@@ -37,14 +37,7 @@ class AdjacencyGraph:
         return copy.deepcopy(self.__adj)
 
 
-class UnloopedGraph(AdjacencyGraph):
-    def __init__(self, adj):
-
-        adj = MatrixUtils.filldiag(adj, np.zeros(adj.shape[0]))
-        super().__init__(adj)
-
-
-class MatchingGraph(UnloopedGraph):
+class MatchingGraph(AdjacencyGraph):
     """
     Graph on which the matching polynomial is defined.
     """
@@ -58,7 +51,11 @@ class MatchingGraph(UnloopedGraph):
         :param r_max: The maximum squeezing paramter in the experiment
         :param x: Edge activity.
         """
+        M = adj.shape[0]
+        if not np.allclose(adj.diagonal(), np.zeros(M)):
+            raise ValueError('Input adjacency matrix should not have loops')
         super().__init__(adj)
+
 
         self.set_half_gamma(half_gamma)
         self.set_v(v)
@@ -169,3 +166,5 @@ class MatchingGraph(UnloopedGraph):
         displacement = d_fock[:self.M]
 
         return sq, displacement, U
+
+
