@@ -7,39 +7,93 @@ import interferometer as itf
 
 from src.gbs_matrix import GBSMatrix, GaussianMatrix
 from src.utils import MatrixUtils
+from src.symplectic import SymplecticFock
+
 
 # Construct experiment
 
 class PureGBS:
 
-    def __init__(self, M):
+    def __init__(self, M, dtype=np.complex64):
         """
         :param M: Number of modes of the experiment.
         """
         self.M = M
-        self._B = None
-        self.alphas = np.zeros(M)
-        self.rs = np.zeros(M)
-        self.U = np.identity(M)
+
+        self._cov_fock = 0.5 * np.identity(2 * M, dtype=dtype)  # Vacuum state
+        self._means_fock = np.zeros(2 * M, dtype=dtype)  # Means vector
 
     def add_interferometer(self, U):
 
-        if not GaussianMatrix.is_valid_U(U):
-            raise ValueError('Input matrix is not valid unitary interferometer')
+        S = SymplecticFock.interferometer(U)
+        self._means_fock = S @ self._means_fock
+        self._cov_fock = S @ self._cov_fock @ S.T.conjugate()
 
-        n = U.shape[0]
-        if n != self.M:
-            raise ValueError('Input matrix should have dimensions (M*M)')
+    def add_squeezing(self, rs):
+        s = np.absolute(rs)
+        theta = np.angle(rs)
+
+        S = SymplecticFock.single_mode_squeezing(s, theta)
+        self._means_fock = S @ self._means_fock
+        self._cov_fock = S @ self._cov_fock @ S.T.conjugate()
+
+    def add_two_mode_squeezing(self, r, mode_pair):
+        s = np.absolute(r)
+        theta = np.angle(r)
+
+        S = SymplecticFock.two_mode_squeezing(s, self.M, mode_pair, theta)
+        self._means_fock = S @ self._means_fock
+        self._cov_fock = S @ self._cov_fock @ S.T.conjugate()
+
+    def add_displacement(self, alphas):
+        d = np.concatenate([alphas, alphas.conjugate()])
+        self._means_fock += d
+
+    def state_fock(self):
+        return copy.deepcopy(self._means_fock), copy.deepcopy(self._cov_fock)
+
+    def calc_A(self):
+        _, cov_fock = self.state_fock()
+
+        A = GBSMatrix.Amat(cov_fock)
+
+        return A
+
+    def calc_B(self):
+        A = self.calc_A()
+        M = self.M
+
+        return A[:M, :M]
+
+
+# TODO: inherit TakagiGBS from PureGBS
+class TakagiGBS(PureGBS):
+
+    def __init__(self, M, dtype=np.complex64):
+        """
+        :param M: Number of modes of the experiment.
+        """
+        super().__init__(M, dtype)
+        self.M = M
+        self._B = None
+        self.alphas = np.zeros(M, dtype=dtype)
+        self.rs = np.zeros(M, dtype=dtype)
+        self.U = np.identity(M, dtype=dtype)
+
+    def add_interferometer(self, U):
 
         self.U = U
+        super().add_interferometer(U)
 
     def add_squeezing(self, rs):
         rs = np.asarray(rs)
         self.rs = rs
+        super().add_squeezing(rs)
 
-    def add_coherent(self, alphas):
+    def add_displacement(self, alphas):
         alphas = np.asarray(alphas)
         self.alphas = alphas
+        super().add_displacement(alphas)
 
     def calc_B(self):
 
@@ -61,20 +115,7 @@ class PureGBS:
         B = self.calc_B()
         return GBSMatrix.pure_A_from_B(B)
 
-    def calc_cov_fock(self):
-        A = self.calc_A()
-
-        return GaussianMatrix.cov_fock(A)
-
-    def calc_d_fock(self):
-        """
-        :return: displacement vector in Fock basis
-        """
-
-        return np.concatenate([self.alphas, self.alphas.conjugate()])
-
     def calc_Gamma(self):
-
         half_gamma = self.calc_half_gamma()
 
         return np.concatenate([half_gamma, half_gamma.conjugate()])
@@ -106,4 +147,3 @@ class PureGBS:
 
         x = B / np.outer(half_gamma, half_gamma)
         return x
-

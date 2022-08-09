@@ -80,6 +80,18 @@ class SymplecticFock(Symplectic):
 
     @staticmethod
     def single_mode_squeezing(s, theta=None, dtype=np.complex64):
+        r"""
+        The operator is
+        $$ \bigotimes_{i=1}^M \exp \left[ \frac{1}{2}( r\hat{a}_i^{\dagger2} - r^*\hat{a}_i^2 ) \right]$$
+        where
+        $$r = s e^\theta$$
+
+        :param s: Squeezing amplitude, $s=|r|$
+        :param theta: Squeezing phase angle $\theta$
+        :param dtype:
+        :return: Fock basis symplectic matrix for single mode squeezing
+        """
+
         s = np.atleast_1d(s)  # converts inputs into arrays of at least 1 dimension
 
         if theta is None:
@@ -90,14 +102,62 @@ class SymplecticFock(Symplectic):
 
         for i, (s_i, theta_i) in enumerate(zip(s, theta)):
             S[i,i] = np.cosh(s_i)
-            S[i, i+M] = -np.exp(1j * theta_i) * np.sinh(s_i)
-            S[i+M, i] = -np.exp(-1j * theta_i) * np.sinh(s_i)
+            S[i, i+M] = np.exp(1j * theta_i) * np.sinh(s_i)
+            S[i+M, i] = np.exp(-1j * theta_i) * np.sinh(s_i)
             S[i+M, i+M] = np.cosh(s_i)
 
         return S
 
-    # @staticmethod
-    # def two_mode_squeezing(s, theta=None, dtype=np.float64):
+    @staticmethod
+    def two_mode_squeezing(s, M, mode_pair, theta=None, dtype=np.complex64):
+        r"""
+        The operator is
+        $$ \exp \left[ r\hat{a}_i^{\dagger}\hat{a}_j^\dagger -  r^*\hat{a}_i\hat{a}_j \right]$$
+        where
+        $$r = s e^\theta$$
+
+        :param s: Squeezing amount $|r|$
+        :param M: Total number of modes
+        :param mode_pair: Tuple of mode indices (i, j)
+        :param theta: Squeezing phase angle $\theta$
+        :param dtype:
+        :return: 2M*2M Fock basis symplectic matrix. i-th, j-th, i+M-th and j+M-th rows and columns performs the squeezing, while
+        the rest is identity.
+        """
+
+        i, j = mode_pair
+        S = np.identity(2*M, dtype=dtype)
+
+        S[i,i] = np.cosh(s)
+        S[j,j] = np.cosh(s)
+        S[i+M, i+M] = np.cosh(s)
+        S[j+M, j+M] = np.cosh(s)
+
+        S[i, j+M] = np.exp(1j * theta) * np.sinh(s)
+        S[j, i+M] = np.exp(1j * theta) * np.sinh(s)
+        S[i+M, j] = np.exp(-1j * theta) * np.sinh(s)
+        S[j+M, i] = np.exp(-1j * theta) * np.sinh(s)
+
+        return S
+
+    @staticmethod
+    def interferometer(U):
+        """
+        Fock basis symplectic matrix for interferometer
+        :param U: unitary matrix
+        :return: symplectic transformation matrix (Fock basis)
+        """
+
+        M = U.shape[0]
+
+        if not np.allclose(U @ U.T.conjugate(), np.identity(M)):
+            raise ValueError('Input matrix should be unitary')
+
+        O = np.zeros_like(U)
+        S = np.block([[U.conjugate(), O], [O, U]])
+
+        return S
+
 
 class SymplecticXXPP(Symplectic):
 
@@ -115,8 +175,8 @@ class SymplecticXXPP(Symplectic):
 
         for i, (s_i, theta_i) in enumerate(zip(s, theta)):
             S[i, i] = np.cosh(s_i) - np.cos(theta_i) * np.sinh(s_i)
-            S[i, i + M] = -np.sin(theta_i) * np.sinh(s_i)
-            S[i + M, i] = -np.sin(theta_i) * np.sinh(s_i)
+            S[i, i + M] = np.sin(theta_i) * np.sinh(s_i)
+            S[i + M, i] = np.sin(theta_i) * np.sinh(s_i)
             S[i + M, i + M] = np.cosh(s_i) + np.cos(theta_i) * np.sinh(s_i)
 
         return S
