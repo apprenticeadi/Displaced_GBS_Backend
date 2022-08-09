@@ -98,6 +98,7 @@ class PureGBS:
         in other words this is the edge activities matrix x"""
 
         B = self.calc_B()
+        B = MatrixUtils.filldiag(B, np.zeros(self.M))
         half_gamma = self.calc_half_gamma()
         if np.any(half_gamma == 0):
             raise Exception('Cannot transform into matching polynomial graph as some modes are undisplaced. ')
