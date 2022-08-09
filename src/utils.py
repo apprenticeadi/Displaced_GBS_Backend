@@ -2,11 +2,12 @@ import os
 import pandas as pd
 import random
 import numpy as np
-import interferometer as itf
 import sys
 import logging
 import datetime
 import copy
+
+import src.interferometer as itf
 
 class MatrixUtils:
 
