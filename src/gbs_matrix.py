@@ -153,6 +153,7 @@ class GBSMatrix:
         return True
 
 
+
 class GaussianMatrix:
     """Class of functions for generating covariance matrix and means vector from GBS matrices"""
 
