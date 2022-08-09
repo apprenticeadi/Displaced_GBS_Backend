@@ -75,14 +75,15 @@ class PureGBS:
 
     def calc_Gamma(self):
 
-        cov_fock = self.calc_cov_fock()
+        half_gamma = self.calc_half_gamma()
 
-        return GBSMatrix.Gamma(cov_fock, self.calc_d_fock())
+        return np.concatenate([half_gamma, half_gamma.conjugate()])
 
     def calc_half_gamma(self):
-        Gamma = self.calc_Gamma()
+        B = self.calc_B()
+        half_gamma = self.alphas.conjugate() - self.alphas @ B
 
-        return Gamma[:self.M]
+        return half_gamma
 
     def generate_unweighted_adj(self):
         """Generates adjacency matrix for unweighted loopless graph on which we calculate the matching polynomial"""
