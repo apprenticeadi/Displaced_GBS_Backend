@@ -29,14 +29,14 @@ class MatrixUtils:
 
     @staticmethod
     def filldiag(A, gamma):
+        m,n = A.shape
 
-        if A.shape[0] != gamma.shape[0]:
+        if m != n:
+            raise ValueError('Input matrix should be square matrix')
+        if m != gamma.shape[0]:
             raise ValueError('Input matrix and vector should have compatible shapes')
 
-        for i, gamma_i in enumerate(gamma):
-            A[i,i] = gamma_i
-
-        return A
+        return A + gamma * np.eye(m)
 
 
 class DFUtils:
