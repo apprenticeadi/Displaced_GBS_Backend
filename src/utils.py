@@ -36,7 +36,7 @@ class MatrixUtils:
         if m != gamma.shape[0]:
             raise ValueError('Input matrix and vector should have compatible shapes')
 
-        return A + gamma * np.eye(m)
+        return A + (gamma - A.diagonal()) * np.eye(m)
 
 
 class DFUtils:
