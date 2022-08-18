@@ -12,6 +12,9 @@ from src.symplectic import SymplecticFock
 
 # Construct experiment
 
+# TODO: One should avoid using Fock basis. xxpp basis is real and suffers less numerical errors. #]
+#  Converting between fock and xxpp basis is prone to error.
+
 class PureGBS:
 
     def __init__(self, M, dtype=np.complex64):
@@ -66,7 +69,6 @@ class PureGBS:
         return A[:M, :M]
 
 
-# TODO: inherit TakagiGBS from PureGBS
 class TakagiGBS(PureGBS):
 
     def __init__(self, M, dtype=np.complex64):

@@ -38,6 +38,7 @@ class GBSMatrix:
     def Amat(cov_fock):
         cov_fock = np.asarray(cov_fock)
 
+        # TODO: this almost never works.
         if not GaussianMatrix.is_valid_cov_fock(cov_fock):
             raise ValueError('Input matrix is not valid fock base covariance matrix')
 
@@ -255,6 +256,7 @@ class GaussianMatrix:
 
         return True
 
+    #TODO: This method never works, because converting to xxpp still leaves some imaginary parts that is hard to remove.
     @staticmethod
     def is_valid_cov_fock(cov_fock, tol=1e-7):
         cov_fock = np.asarray(cov_fock)
@@ -265,7 +267,9 @@ class GaussianMatrix:
 
         # Convert to xxpp quadrature basis to check the rest, since strawberryfields williamson function only works for
         # real symmetric
-        cov_xxpp = Symplectic.matrix_fock_to_xxpp(cov_fock)
+        #TODO: this is bad practice.
+        cov_xxpp = Symplectic.matrix_fock_to_xxpp(cov_fock).real
+
 
         return GaussianMatrix.is_valid_cov_xxpp(cov_xxpp, tol=tol)
 
