@@ -4,9 +4,7 @@ from scipy.optimize import minimize
 
 from strawberryfields.decompositions import takagi
 
-from src.utils import RandomUtils, MatrixUtils
-from src.adjacency_graph import MatchingGraph
-from src.gbs_matrix import GaussianMatrix, GBSMatrix
+from src.utils import RandomUtils
 
 # A design protocol that can target arbitrary squeezing.
 # Keep everything real in this script, so DBD is real symmetric/ Hermitian
@@ -15,26 +13,33 @@ from src.gbs_matrix import GaussianMatrix, GBSMatrix
 M = 20
 delta = 5
 
-sq_target = np.random.uniform(low=0.5, high=1.5, size=(M,))
-sq_target.sort()
-tanh_target = np.tanh(sq_target)
+sq_dis_ratio = 100
 
+# sq_target = np.random.uniform(low=0.5, high=1.5, size=(M,))
+sq_phot_target = np.sqrt(M) * sq_dis_ratio / (1 + sq_dis_ratio)  # We want total photon number to be on order of sqrt(M)
+sq_target = np.arcsinh(np.sqrt(sq_phot_target / M)) * np.ones(M)
+sq_target.sort()
+tanhr_target = np.tanh(sq_target)
+
+print('sq_phot_target={}'.format(sq_phot_target))
+
+dis_phot_target =  np.sqrt(M) / (1 + sq_dis_ratio) # np.random.uniform(low=30, high=120)
+
+print('dis_phot_target={}'.format(dis_phot_target))
 
 x = -1 / 8
 adj = RandomUtils.random_adj(M, delta)
 
-half_gamma = np.random.uniform(low=0.1, high=1, size=(M,))  # + np.random.random(M) * 1j
-
-
-v_init = np.asarray([1] * M)
+half_gamma = np.ones(M)
+v_init = sq_dis_ratio * np.ones(M)
 B_init = x * np.multiply(adj * half_gamma, half_gamma[:, np.newaxis]) + v_init * np.eye(M)
 eigs_B_init = scipy.linalg.eigvalsh(B_init)
-d_init = np.sqrt(tanh_target / abs(max(eigs_B_init, key=abs)))
+d_init = np.sqrt(tanhr_target / abs(eigs_B_init))
 
 
 def get_DBD(d, v):
-    B = x * np.multiply(adj * half_gamma, half_gamma[:, np.newaxis]) + v * np.eye(M)
-    D = d * np.eye(M)
+    B = x * np.multiply(adj * half_gamma, half_gamma[:, np.newaxis]) + np.diag(v)
+    D = np.diag(d)
     return D @ B @ D
 
 
@@ -70,10 +75,15 @@ def cost(dvg):
 
     tanhr = get_tanhr(d, v)
 
+    alpha = get_alpha(d, v)
+    dis_phot = sum(np.absolute(alpha) ** 2)
+
     if any(tanhr >= 1):
-        return max(tanhr) ** 2  * M  # Penalise tanhr larger than 1
+        return max(tanhr) ** 2 * M + dis_phot ** 2  # Penalise tanhr larger than 1
+    elif any(alpha >=1):
+        return dis_phot ** 2  # Penalise collisions by high displacements
     else:
-        return sum(np.absolute(tanh_target - tanhr) ** 2) / M
+        return sum(np.absolute(tanhr_target - tanhr) ** 2) / M + 0.01 * (dis_phot - dis_phot_target) ** 2 / M
 
 
 result = minimize(cost, x0=np.concatenate([d_init, v_init]))
@@ -91,9 +101,22 @@ tanhr.sort()
 alpha = get_alpha(d_final, v_final)
 sq = np.arctanh(tanhr)
 
-# print(sq)
-# print(alpha)
+sq_phot_vector = np.sinh(sq)**2
+sq_phot = sum(sq_phot_vector)
 
+dis_phot_vector = np.absolute(alpha)**2
+dis_phot = sum(dis_phot_vector)
 
-print(sum(np.sinh(sq) ** 2))
-print(sum(np.absolute(alpha) ** 2))
+print('cost_sq={}'.format(sum(np.absolute(tanhr_target - tanhr) ** 2) / M))
+print('cost_dis={}'.format((dis_phot - dis_phot_target) ** 2))
+
+print('sq_phot={}'.format(sq_phot))
+print('dis_phot={}'.format(dis_phot))
+
+# print('sq_target={}'.format(sq_target))
+# print('sq={}'.format(sq))
+# print('alpha={}'.format(alpha))
+
+mean_photon_vector = dis_phot_vector + np.diag(U @ np.diag(sq_phot_vector) @ U.T).real
+
+print('mean_photon_vector={}'.format(mean_photon_vector))
