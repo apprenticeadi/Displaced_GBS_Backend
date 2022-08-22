@@ -23,7 +23,7 @@ n_sq_target = sum(np.sinh(sq_target)**2)
 
 print('n_sq_target={}'.format(n_sq_target))
 
-n_dis_target = n_phot - n_sq_target
+n_dis_target = n_phot - n_sq_target  # Can set this to be arbitrary as well.
 
 print('n_dis_target={}'.format(n_dis_target))
 
