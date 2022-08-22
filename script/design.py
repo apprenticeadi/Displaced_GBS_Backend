@@ -13,25 +13,25 @@ from src.utils import RandomUtils
 M = 10
 delta = 5
 
-sq_dis_ratio = 0.0001
+n_phot = np.sqrt(M)  # This will likely keep experiment in collisionless regime. Later will verify with mean_photon_vector.
+sq_max = np.arcsinh(np.sqrt(n_phot / M))
 
-# sq_target = np.random.uniform(low=0.5, high=1.5, size=(M,))
-sq_phot_target = np.sqrt(M) * sq_dis_ratio / (1 + sq_dis_ratio)  # We want total photon number to be on order of sqrt(M)
-sq_target = np.arcsinh(np.sqrt(sq_phot_target / M)) * np.ones(M)
+sq_target = np.random.uniform(low=sq_max / 10, high=sq_max, size=(M,))  # Can set this to be arbitrary
 sq_target.sort()
 tanhr_target = np.tanh(sq_target)
+n_sq_target = sum(np.sinh(sq_target)**2)
 
-print('sq_phot_target={}'.format(sq_phot_target))
+print('n_sq_target={}'.format(n_sq_target))
 
-dis_phot_target = np.sqrt(M) / (1 + sq_dis_ratio)  # np.random.uniform(low=30, high=120)
+n_dis_target = n_phot - n_sq_target
 
-print('dis_phot_target={}'.format(dis_phot_target))
+print('n_dis_target={}'.format(n_dis_target))
 
 x = -1 / 8
 adj = RandomUtils.random_adj(M, delta)
 
 half_gamma_init = np.ones(M)
-v_init = half_gamma_init
+v_init = np.ones(M)  # I don't know what is a good starting point
 
 
 def get_B(half_gamma, v):
@@ -41,10 +41,11 @@ def get_B(half_gamma, v):
 
 B_init = x * np.multiply(adj * half_gamma_init, half_gamma_init[:, np.newaxis]) + v_init * np.eye(M)
 eigs_B_init = scipy.linalg.eigvalsh(B_init)
-d_max = np.sqrt(max(tanhr_target) / np.absolute(max(eigs_B_init, key=abs)))  # keep it the same, since target sq is the same across all modes
-d_vary = np.sqrt(tanhr_target / np.absolute(eigs_B_init))
+d_max = np.sqrt(max(tanhr_target) / np.absolute(max(eigs_B_init, key=abs)))
+# d_vary = np.sqrt(tanhr_target / np.absolute(eigs_B_init))
 
-half_gamma_init = d_max * half_gamma_init
+# Scale the inital half_gamma and v, so the optimisation starts with a physically valid B matrix.
+half_gamma_init = d_max * half_gamma_init  # Should I use d_max or d_vary I don't know.
 v_init = d_max ** 2 * v_init
 
 
@@ -52,7 +53,7 @@ def get_tanhr(half_gamma, v):
     B = get_B(half_gamma, v)
     # tanhr, _ = takagi(DBD)
 
-    tanhr = np.absolute(scipy.linalg.eigvalsh(B))
+    tanhr = np.absolute(scipy.linalg.eigvalsh(B))  # When B is real, takagi spectrum equals the magnitude of eigval(B).
     tanhr.sort()
 
     return tanhr
@@ -86,11 +87,11 @@ def cost(gamma_v):
     coeff = 0.01 * np.average(tanhr) / dis_phot
 
     if any(tanhr >= 1):
-        return max(tanhr) ** 2 + coeff * dis_phot_target ** 2 # Penalise tanhr larger than 1
+        return max(tanhr) ** 2 + coeff * n_dis_target ** 2 # Penalise tanhr larger than 1
     elif any(alpha >= 1):
-        return max(tanhr) ** 2 + coeff * dis_phot_target ** 2   # Penalise collisions caused by high collisions
+        return max(tanhr) ** 2 + coeff * n_dis_target ** 2   # Penalise collisions caused by high collisions
     else:
-        return sum(np.absolute(tanhr_target - tanhr) ** 2) / M + coeff * (dis_phot - dis_phot_target) ** 2 / M
+        return sum(np.absolute(tanhr_target - tanhr) ** 2) / M + coeff * (dis_phot - n_dis_target) ** 2 / M
 
 
 result = minimize(cost, x0=np.concatenate([half_gamma_init, v_init]))
@@ -115,7 +116,7 @@ dis_phot_vector = np.absolute(alpha) ** 2
 dis_phot = sum(dis_phot_vector)
 
 print('cost_sq={}'.format(sum(np.absolute(tanhr_target - tanhr) ** 2) / M))
-print('cost_dis={}'.format((dis_phot - dis_phot_target) ** 2))
+print('cost_dis={}'.format((dis_phot - n_dis_target) ** 2))
 
 print('sq_phot={}'.format(sq_phot))
 print('dis_phot={}'.format(dis_phot))
