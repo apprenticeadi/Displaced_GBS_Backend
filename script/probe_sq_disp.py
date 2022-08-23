@@ -31,8 +31,8 @@ logging.info('Probing squeezing/displacement ratio in design protocol. '
     M, delta
 ))
 
-results_df = pd.DataFrame(columns=['sq_target', 'sq_final', 'alpha_final', 'tanhr_target', 'v_init', 'half_gamma_init', 'v_final', 'half_gamma_final'])
-
+results_df = pd.DataFrame(columns=['modes', 'sq_target', 'sq_final', 'alpha_final', 'mean_photon_vector','tanhr_target', 'v_init', 'half_gamma_init', 'v_final', 'half_gamma_final'])
+results_df['modes'] = modes
 # <<<<<<<<<<<<<<<<<<< Target  >>>>>>>>>>>>>>>>>>
 sq_dis_ratio = 0.0001
 logging.info('Target sq/dis ratio = {}'.format(sq_dis_ratio))
@@ -178,7 +178,8 @@ logging.info('dis_phot={}'.format(dis_phot))
 logging.info('Final sq/dis ratio = {}'.format(sq_phot / dis_phot))
 
 mean_photon_vector = dis_phot_vector + np.sum(np.square(np.absolute(U)) * sq_phot_vector, axis=1)
-
+results_df['mean_photon_vector'] = mean_photon_vector
+results_df.to_csv(dir+r'\results.csv')
 # <<<<<<<<<<<<<<<<<<< Plotting >>>>>>>>>>>>>>>>>>
 fig = plt.figure("Constructed experiment", figsize=(8,8))
 # Create a gridspec for adding subplots of different sizes
