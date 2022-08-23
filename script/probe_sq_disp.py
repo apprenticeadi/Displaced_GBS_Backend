@@ -18,7 +18,7 @@ from src.interferometer import Interferometer, square_decomposition
 # <<<<<<<<<<<<<<<<<<< Size  >>>>>>>>>>>>>>>>>>
 log_switch = True
 M = 20
-delta = 5
+delta = 10
 modes = list(range(M))
 
 # <<<<<<<<<<<<<<<<<<< Logging  >>>>>>>>>>>>>>>>>>
@@ -223,6 +223,7 @@ ax3.set_ylim(bottom=1e-10, top=1e0)
 
 ax4 = fig.add_subplot(axgrid[:4, 4:])
 ax4.set_axis_off()
+ax4.text(0, 0.7, 'x={}'.format(x))
 ax4.text(0, 0.6, 'Optimisation \nSuccess:{}'.format(result.success))
 ax4.text(0, 0.5, r'$\sum_i \sinh(r_i)^2$={}'.format(np.format_float_positional(sq_phot, precision=3, unique=False, fractional=False, trim='k')))
 ax4.text(0, 0.4, r'$\sum_i |\alpha_i|^2$={}'.format(np.format_float_positional(dis_phot, precision=3, unique=False, fractional=False, trim='k')))
@@ -230,7 +231,7 @@ ax4.text(0, 0.3, r'$\frac{\sum \sinh(r_i)^2}{\sum |\alpha_i|^2}$' + '={}'.format
 
 fig.tight_layout()
 
-plt.savefig(dir+r'\Experiment_{}.pdf'.format(result.success))
+plt.savefig(dir+r'\Experiment_M={}_delta={}_{}.pdf'.format(M, delta, result.success))
 
 I = square_decomposition(U)
 fig1 = I.draw()
