@@ -16,8 +16,7 @@ from src.interferometer import Interferometer, square_decomposition
 # Keep everything real in this script, so DBD is real symmetric/ Hermitian
 
 # <<<<<<<<<<<<<<<<<<< Size  >>>>>>>>>>>>>>>>>>
-log_switch = True
-M = 20
+M = 30
 delta = 10
 modes = list(range(M))
 
@@ -34,7 +33,7 @@ logging.info('Probing squeezing/displacement ratio in design protocol. '
 results_df = pd.DataFrame(columns=['modes', 'sq_target', 'sq_final', 'alpha_final', 'mean_photon_vector','tanhr_target', 'v_init', 'half_gamma_init', 'v_final', 'half_gamma_final'])
 results_df['modes'] = modes
 # <<<<<<<<<<<<<<<<<<< Target  >>>>>>>>>>>>>>>>>>
-sq_dis_ratio = 0.0001
+sq_dis_ratio = 0.01
 logging.info('Target sq/dis ratio = {}'.format(sq_dis_ratio))
 
 # sq_target = np.random.uniform(low=0.5, high=1.5, size=(M,))
@@ -99,7 +98,7 @@ eigs_B_init = scipy.linalg.eigvalsh(B_init)
 d_max = np.sqrt(max(tanhr_target) / np.absolute(max(eigs_B_init, key=abs)))  # keep initial D the same
 d_vary = np.sqrt(tanhr_target / np.absolute(eigs_B_init))  # let initial D be different
 half_gamma_init = d_max * half_gamma_init
-v_init = d_max ** 2 * v_init
+# v_init = d_max ** 2 * v_init
 B_init = get_B(half_gamma_init, v_init)
 
 # np.save(dir+r'\v_init', v_init)
@@ -197,7 +196,7 @@ if M<=31:
 ax1 = fig.add_subplot(axgrid[4:, 4:])
 ax1.bar(modes, mean_photon_vector)
 ax1.set_xlabel('Mode')
-ax1.set_xticks(modes)
+# ax1.set_xticks(modes)
 ax1.set_ylabel(r'$\langle n_i \rangle$')
 ax1.set_yscale('log')
 ax1.set_ylim(bottom=1e-10, top=1e0)
@@ -208,7 +207,7 @@ ax2.bar(modes, sq_phot_vector)
 ax2.set_title("Input squeezing")
 ax2.set_xlabel("Mode")
 ax2.set_ylabel(r'$\sinh(r_i)^2$')
-ax2.set_xticks(modes)
+# ax2.set_xticks(modes)
 ax2.set_yscale('log')
 ax2.set_ylim(bottom=1e-10, top=1e0)
 
@@ -217,7 +216,7 @@ ax3.bar(modes, dis_phot_vector)
 ax3.set_title('Input displacement')
 ax3.set_xlabel('Mode')
 ax3.set_ylabel(r'$|\alpha_i|^2$')
-ax3.set_xticks(modes)
+# ax3.set_xticks(modes)
 ax3.set_yscale('log')
 ax3.set_ylim(bottom=1e-10, top=1e0)
 
@@ -227,12 +226,13 @@ ax4.text(0, 0.7, 'x={}'.format(x))
 ax4.text(0, 0.6, 'Optimisation \nSuccess:{}'.format(result.success))
 ax4.text(0, 0.5, r'$\sum_i \sinh(r_i)^2$={}'.format(np.format_float_positional(sq_phot, precision=3, unique=False, fractional=False, trim='k')))
 ax4.text(0, 0.4, r'$\sum_i |\alpha_i|^2$={}'.format(np.format_float_positional(dis_phot, precision=3, unique=False, fractional=False, trim='k')))
-ax4.text(0, 0.3, r'$\frac{\sum \sinh(r_i)^2}{\sum |\alpha_i|^2}$' + '={}'.format(np.format_float_positional(sq_dis_ratio, precision=3, unique=False, fractional=False, trim='k')))
+ax4.text(0, 0.3, r'$\frac{\sum \sinh(r_i)^2}{\sum |\alpha_i|^2}$' + '={}'.format(np.format_float_positional(sq_phot / dis_phot, precision=3, unique=False, fractional=False, trim='k')))
 
 fig.tight_layout()
 
 plt.savefig(dir+r'\Experiment_M={}_delta={}_{}.pdf'.format(M, delta, result.success))
 
-I = square_decomposition(U)
-fig1 = I.draw()
-plt.savefig(dir+r'\Interferometer.pdf')
+if M < 20:
+    I = square_decomposition(U)
+    fig1 = I.draw()
+    plt.savefig(dir+r'\Interferometer.pdf')

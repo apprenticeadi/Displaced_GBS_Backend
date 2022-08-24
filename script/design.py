@@ -6,7 +6,7 @@ from strawberryfields.decompositions import takagi
 
 from src.utils import RandomUtils
 
-# A design protocol that can target arbitrary squeezing.
+# A design protocol that can target arbitrary squeezing and arbitrary number of displaced photons
 # Keep everything real in this script, so DBD is real symmetric/ Hermitian
 
 
