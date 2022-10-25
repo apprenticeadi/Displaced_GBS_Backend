@@ -11,12 +11,11 @@ from src.gbs_matrix import GBSMatrix, GaussianMatrix
 from src.adjacency_graph import MatchingGraph
 
 # <<<<<<<<<<<<<<<<<<< Parameters  >>>>>>>>>>>>>>>>>>
-xs = [-1000, -500, -100, -50, -10, -5, -4, -3, -2, -1, -0.5, -0.25, -0.125, -0.1, -0.09, -0.08, -0.07, -0.06, -0.05,
-      -0.04, -0.03, -0.02, -0.01, 0.01, 0.05, 0.1, 0.3, 0.5, 0.8, 1, 2, 3, 4, 5, 10, 50, 100, 500, 1000]  # edge activity
-Ms = [10, 20, 30, 50, 100]
+xs = np.linspace(-0.5, 0.5, 100) # edge activity
+Ms = [20, 30, 50, 100]
 
 # <<<<<<<<<<<<<<<<<<< Fixed parameters (if any)  >>>>>>>>>>>>>>>>>>
-delta = 5
+delta = 10
 bound = - 1 / (4*delta - 4)
 r_max = 0.75
 
@@ -35,7 +34,7 @@ fig1, ax1 = plt.subplots()
 ax1.set_title('Average squeezed photons')
 ax1.set_xlabel('x')
 ax1.set_ylabel('n_sq')
-ax1.set_xscale('symlog')
+# ax1.set_xscale('symlog')
 color_cycler = fig1.gca()._get_lines.prop_cycler
 
 # cl photons
@@ -43,16 +42,16 @@ fig2, ax2 = plt.subplots()
 ax2.set_title('Average classical photons')
 ax2.set_xlabel('x')
 ax2.set_ylabel('n_cl')
-ax2.set_yscale('log')
-ax2.set_xscale('symlog')
+# ax2.set_yscale('log')
+# ax2.set_xscale('symlog')
 
 # sq/cl
 fig3, ax3 = plt.subplots()
 ax3.set_title('Photon number ratio squeezed/classical')
 ax3.set_xlabel('x')
 ax3.set_ylabel('n_sq/n_cl')
-ax3.set_yscale('log')
-ax3.set_xscale('symlog')
+# ax3.set_yscale('log')
+# ax3.set_xscale('symlog')
 ax3.axvline(x=bound, ls=':', label='-1/(4*delta-4)')
 
 for M in Ms:
