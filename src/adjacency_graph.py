@@ -7,6 +7,8 @@ from strawberryfields.decompositions import takagi
 from src.utils import MatrixUtils
 from src.gbs_matrix import GBSMatrix, GaussianMatrix
 
+#TODO: Add vertex weighting to adjacency graph
+
 class AdjacencyGraph:
     """
     Intended to be a wrapper class around networkx. Nx doesn't offer straightforward connection between graph object
@@ -15,26 +17,49 @@ class AdjacencyGraph:
     Only takes in undirected graphs, with symmetric adjacency matrices.
     """
 
-    def __init__(self, adj):
+    def __init__(self, adj, vertex_weights=None):
         adj = np.asarray(adj)
         m, n = adj.shape
+
+        if vertex_weights is None:
+            vertex_weights = np.ones(m)
+        vertex_weights = np.asarray(vertex_weights).flatten()
+        l = vertex_weights.shape
+
         if m != n:
             raise ValueError('Input adjacency matrix must be square matrix')
-
+        if m != l:
+            raise ValueError('Input adjacency matrix and vertex weights should have same dimensions')
         if not np.allclose(adj, adj.T):
             raise ValueError('Input adjacency matrix must be symmetric matrix')
 
-        self.__adj = np.asarray(adj)
+        self.__adj = adj
+        self.__vertex_weights = vertex_weights  # np array
         self.M = m
 
     def get_graph(self):
         G = nx.from_numpy_matrix(self.get_adj())
+        for n in G.nodes:
+            G.nodes[n]['weight'] = self.__vertex_weights[n]
+
+        self.__edge_weights = nx.get_edge_attributes(G, 'weight')  # dictionary
+
+        for u, v, d in G.edges(data=True):
+            weight = d['weight']
+            distance = np.absolute(weight)
+            G.edges[u, v]['distance'] = distance
 
         return G
 
     def get_adj(self):
 
         return copy.deepcopy(self.__adj)
+
+    # Todo: finish this, draft in test_nx.py
+    def draw(self, show_edge_weights=False):
+
+        pos = nx.spring_layout(G, weight='distance', seed=7)  # positions for all nodes - seed for reproducibility
+
 
 
 class MatchingGraph(AdjacencyGraph):
