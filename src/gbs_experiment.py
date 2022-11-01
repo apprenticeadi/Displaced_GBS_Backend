@@ -7,7 +7,7 @@ import interferometer as itf
 
 from src.gbs_matrix import GBSMatrix, GaussianMatrix
 from src.utils import MatrixUtils
-from src.symplectic import SymplecticXXPP
+from src.symplectic import Symplectic, SymplecticXXPP
 
 
 # Construct experiment
@@ -28,11 +28,14 @@ class PureGBS:
         self._cov = 0.5 * np.identity(2 * M)  # Vacuum state
         self._means = np.zeros(2 * M)  # Means vector
 
-    def add_interferometer(self, U):
+    def state_xxpp(self):
+        return self.get_means(), self.get_cov()
 
-        S = SymplecticXXPP.interferometer(U)
-        self._means = S @ self._means
-        self._cov = S @ self._cov @ S.T
+    def get_means(self):
+        return copy.deepcopy(self._means)
+
+    def get_cov(self):
+        return copy.deepcopy(self._cov)
 
     def add_squeezing(self, rs):
         """Add single mode squeezing """
@@ -56,20 +59,19 @@ class PureGBS:
         self._means = S @ self._means
         self._cov = S @ self._cov @ S.T
 
+    def add_interferometer(self, U):
+        S = SymplecticXXPP.interferometer(U)
+        self._means = S @ self._means
+        self._cov = S @ self._cov @ S.T
+
     def add_displacement(self, alphas):
         alphas = np.atleast_1d(alphas)
         d = np.sqrt(2) * np.concatenate([alphas.real, alphas.imag])
         self._means += d
 
-    def state_xxpp(self):
-        return copy.deepcopy(self._means), copy.deepcopy(self._cov)
-
     def calc_A(self):
-        _, cov_xxpp = self.state_xxpp()
-
-        A = GBSMatrix.Amat(cov_xxpp)
-
-        return A
+        cov = self.get_cov()
+        return GBSMatrix.Amat(cov)
 
     def calc_B(self):
         A = self.calc_A()
@@ -78,12 +80,20 @@ class PureGBS:
         return A[:M, :M]
 
     def calc_Gamma(self):
-        means_xxpp, cov_xxpp = self.state_xxpp()
-        return GBSMatrix.Gamma(cov_xxpp, means_xxpp)
+        means, cov = self.state_xxpp()
+        return GBSMatrix.Gamma(cov, means)
 
     def calc_half_gamma(self):
         Gamma = self.calc_Gamma()
         return Gamma[:self.M]
+
+    def vacuum_prob(self):
+        means, cov = self.state_xxpp()
+        cov_Q = cov + np.identity(2 * self.M) / 2  # this is in xxpp basis
+        cov_Q_inv = np.linalg.inv(cov_Q)
+
+        return np.exp(-0.5 * means.T @ cov_Q_inv @ means) / np.sqrt(np.linalg.det(cov_Q))
+
 
 #Deprecation
 def TakagiGBS(*args, **kwargs):
@@ -105,22 +115,15 @@ class sudGBS(PureGBS):
         self.rs = np.zeros(M)
         self.U = np.identity(M)
 
-    def _calc_cov(self):
+    # def state_xxpp(self):
+    #     return self.get_means(), self.get_cov()
+
+    def get_cov(self):
         A = self.calc_A()
-        self._cov = GaussianMatrix.cov_xxpp(A)
+        return GaussianMatrix.cov_xxpp(A)
 
-    def _calc_means(self):
-        self._means = np.sqrt(2) * np.concatenate([self.alphas.real, self.alphas.imag])
-
-    def state_xxpp(self):
-        self._calc_means()
-        self._calc_cov()
-        return copy.deepcopy(self._means), copy.deepcopy(self._cov)
-
-    def add_interferometer(self, U):
-
-        self.U = U
-        # super().add_interferometer(U)  # We want to avoid calculating the cov and means, otherwise no point in the takagi shortcut
+    def get_means(self):
+        return np.sqrt(2) * np.concatenate([self.alphas.real, self.alphas.imag])
 
     def add_squeezing(self, rs):
         """Add single mode squeezing"""
@@ -131,6 +134,14 @@ class sudGBS(PureGBS):
         self.rs = rs
         # super().add_squeezing(rs)
 
+    def add_two_mode_squeezing(self, rs):
+        raise Exception('Two mode squeezing in SUD model not supported yet')
+
+    def add_interferometer(self, U):
+
+        self.U = U
+        # super().add_interferometer(U)  # We want to avoid calculating the cov and means, otherwise no point in the takagi shortcut
+
     def add_displacement(self, alphas):
         """Add displacement after interferometer"""
         alphas = np.asarray(alphas)
@@ -138,15 +149,12 @@ class sudGBS(PureGBS):
         # super().add_displacement(alphas)
 
     def calc_B(self):
-
         # Cautious: numpy arrays are mutable, so instance attributes will change if tamper with the array outside the class!
-
         if self._B is None:
             Id = np.identity(self.M)
             v = np.tanh(self.rs)
             D = MatrixUtils.filldiag(Id, v)
             B = self.U @ D @ self.U.T
-
             self._B = copy.deepcopy(B)
         else:
             B = copy.deepcopy(self._B)
@@ -155,7 +163,13 @@ class sudGBS(PureGBS):
 
     def calc_A(self):
         B = self.calc_B()
-        return GBSMatrix.pure_A_from_B(B)
+        O = np.zeros_like(B)
+        A = np.block([
+            [B, O],
+            [O, B.conjugate()]
+        ])
+
+        return A
 
     def calc_Gamma(self):
         half_gamma = self.calc_half_gamma()
@@ -190,6 +204,18 @@ class sudGBS(PureGBS):
         x = B / np.outer(half_gamma, half_gamma)
         return x
 
+    def vacuum_prob(self):
+        B = self.calc_B()
+        Id = np.identity(self.M)
+        cov_Q_inv = np.block([
+            [Id, -B.conjugate()],
+            [-B, Id]
+        ])  # But this is Fock basis!
+        cov_Q_inv = Symplectic.matrix_fock_to_xxpp(cov_Q_inv)
+        means = self.get_means()
+
+        return np.exp(-0.5 * means.T @ cov_Q_inv @ means) * np.sqrt(np.linalg.det(cov_Q_inv))
+
 
 class sduGBS(sudGBS):
 
@@ -197,7 +223,7 @@ class sduGBS(sudGBS):
     def add_displacement(self, betas):
         """Add displacement before interferometer"""
         betas = np.asarray(betas)
-        self.alphas = betas
+        self.alphas = self.U.conjugate() @ betas
 
     # Override
     def add_interferometer(self, U):
