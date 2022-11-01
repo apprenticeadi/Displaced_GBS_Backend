@@ -30,14 +30,31 @@ class MatrixUtils:
 
     @staticmethod
     def filldiag(A, gamma):
-        m,n = A.shape
+        A=np.asarray(A)
+        gamma = np.asarray(gamma)
 
+        m,n = A.shape
         if m != n:
             raise ValueError('Input matrix should be square matrix')
         if m != gamma.shape[0]:
             raise ValueError('Input matrix and vector should have compatible shapes')
 
         return A + (gamma - A.diagonal()) * np.eye(m)
+
+    @staticmethod
+    def n_repetition(A, n_vector):
+        A = np.asarray(A)
+
+        m,n = A.shape
+        if m != n:
+            raise ValueError('Input matrix should be square matrix')
+        if m != n_vector.shape[0]:
+            raise ValueError('Input matrix and vector should have compatible shapes')
+
+        A = np.repeat(A, repeats=n_vector, axis=0)
+        A = np.repeat(A, repeats=n_vector, axis=1)
+
+        return A
 
 
 class DFUtils:
