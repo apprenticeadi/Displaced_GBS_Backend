@@ -56,7 +56,7 @@ class AdjacencyGraph:
 
         return copy.deepcopy(self.__adj)
 
-    # Todo: finish this, draft in test_nx.py
+    # Todo: draw loops
     def draw(self, show_edge_weights=False, node_size_min=100, node_size_max=1000, edge_width_min=2, edge_width_max=8,
              edge_transparency=0.5, edge_color='b', node_font_size=10, edge_font_size=10, ax_margins=0.08, ax_axis='off'):
 
