@@ -9,6 +9,7 @@ import copy
 
 import src.interferometer as itf
 
+
 class MatrixUtils:
 
     @staticmethod
@@ -158,3 +159,37 @@ class LogUtils:
         # make logger print to console (it will not if multithreaded)
         logging.getLogger(module_name).addHandler(stdout_handler)
 
+class TestUtils:
+
+    @staticmethod
+    def sf_circuit(M, U, alpha, r, order='SUD', hbar=1):
+        """Generate strawberryfields state for GBS circuit from strawberryfields"""
+
+        import strawberryfields as sf
+        from strawberryfields import ops
+
+        sf.hbar = hbar
+
+        eng = sf.Engine(backend='gaussian')
+        prog = sf.Program(M)  # creates an M mode quantum program
+
+        U = U.conjugate()  # Conjugate here due to convention difference
+        r = - np.atleast_1d(r)  # Add minus sign here, because strawberry fields use different convention for squeezing (off by minus sign)
+        alpha = np.atleast_1d(alpha)
+
+        with prog.context as q:
+
+            for operation in list(order):
+                if operation == 'S':
+                    for i, r_i in enumerate(r):
+                        ops.Sgate(r=np.absolute(r_i), phi=np.angle(r_i)) | q[i]
+                elif operation == 'U':
+                    ops.Interferometer(U) | q
+                elif operation == 'D':
+                    for j, alpha_j in enumerate(alpha):
+                        ops.Dgate(r=np.absolute(alpha_j), phi=np.angle(alpha_j)) | q[j]
+                else:
+                    raise ValueError('Order not recognized')
+
+        state = eng.run(prog).state
+        return state
