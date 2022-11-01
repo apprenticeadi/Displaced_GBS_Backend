@@ -27,15 +27,6 @@ class GBSMatrix:
 
         return X
 
-    # @staticmethod
-    # def cov_Q(cov_fock, dtype=np.complex64):
-    #     """Returns cov_Q """
-    #     cov_fock = np.asarray(cov_fock)
-    #
-    #     M = cov_fock.shape[0] // 2
-    #
-    #     return cov_fock + np.identity(2 * M, dtype=dtype) / 2
-
     @staticmethod
     def Amat(cov_xxpp):
 
