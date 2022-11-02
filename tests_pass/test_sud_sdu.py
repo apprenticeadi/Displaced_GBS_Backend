@@ -41,9 +41,7 @@ half_gamma3 = gbs3.calc_half_gamma()
 means3, cov3 = gbs3.state_xxpp()
 
 gbs4 = sduGBS(M)
-gbs4.add_squeezing(r)
-gbs4.add_displacement(alpha)
-gbs4.add_interferometer(U)
+gbs4.add_all(r, alpha, U)
 B4 = gbs4.calc_B()
 Gamma4 = gbs4.calc_Gamma()
 half_gamma4 = gbs4.calc_half_gamma()
@@ -59,9 +57,4 @@ print(np.allclose(half_gamma3, half_gamma4))
 print(np.allclose(means3, means4))
 print(np.allclose(cov3, cov4))
 
-cov_Q = cov + np.identity(2* M) / 2
-cov_Q_inv = np.linalg.inv(cov_Q)
-exp_factor = -0.5 * means.T @ cov_Q_inv @ means
-
-vacuum_prob = np.exp(exp_factor) / np.sqrt(np.linalg.det(cov_Q))
 

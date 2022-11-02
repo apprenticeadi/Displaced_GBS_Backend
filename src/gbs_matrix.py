@@ -78,7 +78,7 @@ class GBSMatrix:
         means_fock = Symplectic.vector_xxpp_to_fock(means_xxpp)
 
         cov_Q = cov_fock + np.identity(2 * M) / 2
-        return np.linalg.inv(cov_Q) @ means_fock.conjugate()
+        return means_fock.conjugate() @ np.linalg.inv(cov_Q)
 
     @staticmethod
     def is_valid_Amat(A):
@@ -205,9 +205,7 @@ class GaussianMatrix:
 
         cov_Q = GaussianMatrix.cov_Q(A)
 
-        d_conj = Gamma @ cov_Q
-
-        return d_conj.conjugate()
+        return cov_Q @ Gamma.conjugate()
 
     @staticmethod
     def d_xxpp(A, Gamma):
