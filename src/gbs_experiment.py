@@ -268,7 +268,7 @@ class sudGBS(PureGBS):
         alphas = self.get_alphas()
         rs = self.get_rs()
 
-        return np.exp((alphas @ B @ alphas.conjugate()).real - sum(alphas**2)) / np.prod(np.absolute(np.cosh(rs)))
+        return np.exp((alphas @ B @ alphas.conjugate()).real - sum(np.absolute(alphas)**2)) / np.prod(np.absolute(np.cosh(rs)))
 
     # def prob(self, outcome):
     #

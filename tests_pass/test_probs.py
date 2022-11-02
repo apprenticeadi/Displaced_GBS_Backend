@@ -5,7 +5,7 @@ from scipy.special import factorial
 
 from src.gbs_experiment import PureGBS, sudGBS, sduGBS
 from src.utils import TestUtils, MatrixUtils
-from src.thewalrus_quantum import prefactor, density_matrix_element
+from thewalrus.quantum import density_matrix_element
 
 import strawberryfields as sf
 from thewalrus import hafnian
@@ -49,13 +49,13 @@ print('Test vacuum probability')
 vacuum_prob = gbs.vacuum_prob()
 vacuum_prob2 = gbs2.vacuum_prob()
 sf_vacuum_prob = sf_state.fock_prob([0]*M)
-walrus_prefactor = prefactor(means, cov, hbar=1)
+walrus_prob = density_matrix_element(means, cov, [0]*M, [0]*M, hbar=1)
 if not np.isclose(vacuum_prob, vacuum_prob2):
     raise Warning('Not self consistent')
 if not np.isclose(vacuum_prob, sf_vacuum_prob):
     raise Warning('Not consistent with strawberryfields')
-if not np.isclose(vacuum_prob, walrus_prefactor):
-    raise Warning('Not consistent with walrus prefactor')
+if not np.isclose(vacuum_prob, walrus_prob):
+    raise Warning('Not consistent with walrus prob')
 
 
 # Test GBS matrices
