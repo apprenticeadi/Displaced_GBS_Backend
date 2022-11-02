@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.stats import unitary_group
 import itertools
-from math import factorial
+from scipy.special import factorial
 
 from src.gbs_experiment import PureGBS, sudGBS, sduGBS
 from src.utils import TestUtils, MatrixUtils
@@ -12,7 +12,7 @@ from thewalrus import hafnian
 
 # Test script for vacuum probability calculation for different models of gbs experiments
 
-M = 2
+M = 5
 U = unitary_group.rvs(M)
 r = np.random.uniform(low=0.5, high=1, size=(M, ))
 alpha = np.random.uniform(low=0.5, high=1, size=(M,))
@@ -73,8 +73,7 @@ def gbs_prob(outcome):
     half_gamma_n = MatrixUtils.n_repetition(half_gamma, outcome)
     haf_B = MatrixUtils.filldiag(B_n, half_gamma_n)
     prob = vacuum_prob * np.absolute(hafnian(haf_B, loop=True)) ** 2
-    for n in outcome:
-        prob /= factorial(n)
+    prob /= np.prod(factorial(outcome))
     return prob
 
 
