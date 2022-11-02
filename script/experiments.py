@@ -11,6 +11,7 @@ from src.utils import LogUtils
 
 # This script sets up an experiment and calculates the probabilities
 # TODO: make the np arrays shorter before saving, and try to maybe parallelize this.
+# TODO: for each (M,N) run a bunch of experiments with different unitaries and try averaging.
 # <<<<<<<<<<<<<<<<<<< Logging  >>>>>>>>>>>>>>>>>>
 time_stamp = datetime.datetime.now().strftime("%d-%m-%Y(%H-%M-%S.%f)")
 dir = r'..\Results\experiments\{}'.format(time_stamp)
