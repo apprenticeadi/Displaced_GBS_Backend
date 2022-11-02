@@ -44,15 +44,22 @@ class MatrixUtils:
     @staticmethod
     def n_repetition(A, n_vector):
         A = np.asarray(A)
+        n_vector = np.asarray(n_vector)
+        if A.shape[0] != n_vector.shape[0]:
+            raise ValueError('Input arrays should have compatible shapes')
 
-        m,n = A.shape
-        if m != n:
-            raise ValueError('Input matrix should be square matrix')
-        if m != n_vector.shape[0]:
-            raise ValueError('Input matrix and vector should have compatible shapes')
-
-        A = np.repeat(A, repeats=n_vector, axis=0)
-        A = np.repeat(A, repeats=n_vector, axis=1)
+        if len(A.shape) == 1:
+            # This is vector
+            A = np.repeat(A, repeats=n_vector, axis=0)
+        elif len(A.shape) ==2:
+            # This is matrix
+            m,n = A.shape
+            if m != n:
+                raise ValueError('Input matrix should be square matrix')
+            A = np.repeat(A, repeats=n_vector, axis=0)
+            A = np.repeat(A, repeats=n_vector, axis=1)
+        else:
+            raise ValueError('Can only n-repeat matrix or vectors')
 
         return A
 
