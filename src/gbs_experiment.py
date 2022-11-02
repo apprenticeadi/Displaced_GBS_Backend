@@ -2,13 +2,13 @@ from strawberryfields.decompositions import takagi
 import numpy as np
 import random
 import copy
-
-import interferometer as itf
+from scipy.special import factorial
 
 from src.gbs_matrix import GBSMatrix, GaussianMatrix
 from src.utils import MatrixUtils
 from src.symplectic import Symplectic, SymplecticXXPP
 
+from thewalrus import hafnian
 
 # Construct experiment
 
@@ -108,6 +108,19 @@ class PureGBS:
 
         return np.exp(-0.5 * means.T @ cov_Q_inv @ means) / np.sqrt(np.linalg.det(cov_Q))
 
+    def prob(self, outcome):
+        outcome = np.atleast_1d(outcome)
+        B = self.calc_B()
+        half_gamma = self.calc_half_gamma()
+        B_n = MatrixUtils.n_repetition(B, outcome)
+        half_gamma_n = MatrixUtils.n_repetition(half_gamma, outcome)
+        haf_B = MatrixUtils.filldiag(B_n, half_gamma_n)
+
+        vacuum_prob = self.vacuum_prob()
+
+        prob = vacuum_prob * np.absolute(hafnian(haf_B, loop=True)) ** 2
+        return prob / np.prod(factorial(outcome))
+
 
 #Deprecation
 def TakagiGBS(*args, **kwargs):
@@ -132,8 +145,6 @@ class sudGBS(PureGBS):
         self.added_dis = False
         self.added_intf = False
 
-    # def state_xxpp(self):
-    #     return self.get_means(), self.get_cov()
 
     def get_cov(self):
         B = self.calc_B()
@@ -258,6 +269,19 @@ class sudGBS(PureGBS):
         rs = self.get_rs()
 
         return np.exp((alphas @ B @ alphas.conjugate()).real - sum(alphas**2)) / np.prod(np.absolute(np.cosh(rs)))
+
+    # def prob(self, outcome):
+    #
+    #     B = self.calc_B()
+    #     half_gamma = self.calc_half_gamma()
+    #     B_n = MatrixUtils.n_repetition(B, outcome)
+    #     half_gamma_n = MatrixUtils.n_repetition(half_gamma, outcome)
+    #     haf_B = MatrixUtils.filldiag(B_n, half_gamma_n)
+    #
+    #     vacuum_prob = self.vacuum_prob()
+    #
+    #     prob = vacuum_prob * np.absolute(hafnian(haf_B, loop=True)) ** 2
+    #     return prob / np.prod(factorial(outcome))
 
 
 class sduGBS(sudGBS):

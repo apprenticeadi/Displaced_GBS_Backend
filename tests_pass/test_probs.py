@@ -12,11 +12,13 @@ from thewalrus import hafnian
 
 # Test script for vacuum probability calculation for different models of gbs experiments
 
-M = 5
+M = 2
 U = unitary_group.rvs(M)
-r = np.random.uniform(low=0.5, high=1, size=(M, ))
-alpha = np.random.uniform(low=0.5, high=1, size=(M,))
-# alpha = np.zeros(M)
+r = np.random.uniform(low=0.1, high=1, size=(M, ))
+alpha = np.random.uniform(low=0.1, high=1, size=(M,))
+
+N = sum(np.sinh(r)**2) + sum(alpha**2)
+print('Mean photon number = {}'.format(N))
 
 # Housemade functions
 gbs = PureGBS(M)
@@ -68,26 +70,21 @@ if not np.allclose(half_gamma, half_gamma2):
     raise Warning('Not self consistent for half_gamma')
 
 
-def gbs_prob(outcome):
-    B_n = MatrixUtils.n_repetition(B, outcome)
-    half_gamma_n = MatrixUtils.n_repetition(half_gamma, outcome)
-    haf_B = MatrixUtils.filldiag(B_n, half_gamma_n)
-    prob = vacuum_prob * np.absolute(hafnian(haf_B, loop=True)) ** 2
-    prob /= np.prod(factorial(outcome))
-    return prob
-
 
 def test_prob(outcome):
-    prob=gbs_prob(outcome)
-    sf_prob = sf_state.fock_prob(outcome)
+    prob=gbs2.prob(outcome)
+    sf_prob = sf_state.fock_prob(outcome, cutoff = 20)
     print('For {}, prob={}'.format(outcome, prob))
     if not np.isclose(prob, sf_prob):
         raise Warning('Not consistent with strawberryfields for {}'.format(outcome))
 
+    return prob
+
 
 # Test probabilities
 # TODO: This test never succeeds for displaced circuits.
-outcomes = list(itertools.product([0,1], repeat=M))
+probs = []
+outcomes = list(itertools.product(list(range(10)), repeat=M))
 for ns in outcomes:
-    test_prob(ns)
+    probs.append(test_prob(ns))
 
