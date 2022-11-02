@@ -75,10 +75,7 @@ class DFUtils:
 
     @staticmethod
     def read_filename_head(directory, filename_head, idx=0, dt=None):
-        files = os.listdir(directory)
-
-        filtered_files = [file_ for file_ in files if file_.startswith(filename_head)]
-        file_to_read = os.path.join(directory, filtered_files[idx])
+        file_to_read = DFUtils.return_filename_from_head(directory, filename_head, idx)
 
         df = pd.read_csv(
             file_to_read,
@@ -86,6 +83,15 @@ class DFUtils:
         )
 
         return df, file_to_read
+
+    # Not necessarily pd dataframe
+    @staticmethod
+    def return_filename_from_head(directory, filename_head, idx=0):
+        files = os.listdir(directory)
+
+        filtered_files = [file_ for file_ in files if file_.startswith(filename_head)]
+        file_to_read = os.path.join(directory, filtered_files[idx])
+        return file_to_read
 
 
 class RandomUtils:
