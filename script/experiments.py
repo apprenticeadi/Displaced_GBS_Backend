@@ -10,7 +10,7 @@ from src.gbs_experiment import PureGBS, sudGBS, sduGBS
 from src.utils import LogUtils
 
 # This script sets up an experiment and calculates the probabilities
-
+# TODO: make the np arrays shorter before saving, and try to maybe parallelize this.
 # <<<<<<<<<<<<<<<<<<< Logging  >>>>>>>>>>>>>>>>>>
 time_stamp = datetime.datetime.now().strftime("%d-%m-%Y(%H-%M-%S.%f)")
 dir = r'..\Results\experiments\{}'.format(time_stamp)
@@ -19,7 +19,7 @@ LogUtils.log_config(time_stamp='', dir=dir, filehead='log', module_name='', leve
 logging.info('Generate bunch of experiments and collect collisionless probabilities')
 
 # <<<<<<<<<<<<<<<<<<< Basic parameters  >>>>>>>>>>>>>>>>>>
-Ms = list(range(10, 11))
+Ms = list(range(25, 11))
 sq_dis_ratio = 1
 logging.info('Modes = {}, sq/dis ratio = {}'.format(Ms, sq_dis_ratio))
 
