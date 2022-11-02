@@ -108,7 +108,7 @@ class PureGBS:
 
         return np.exp(-0.5 * means.T @ cov_Q_inv @ means) / np.sqrt(np.linalg.det(cov_Q))
 
-    def prob(self, outcome):
+    def prob(self, outcome, include_vac_prob=True):
         outcome = np.atleast_1d(outcome)
         B = self.calc_B()
         half_gamma = self.calc_half_gamma()
@@ -116,9 +116,12 @@ class PureGBS:
         half_gamma_n = MatrixUtils.n_repetition(half_gamma, outcome)
         haf_B = MatrixUtils.filldiag(B_n, half_gamma_n)
 
-        vacuum_prob = self.vacuum_prob()
+        prob = np.absolute(hafnian(haf_B, loop=True)) ** 2
 
-        prob = vacuum_prob * np.absolute(hafnian(haf_B, loop=True)) ** 2
+        if include_vac_prob:
+            vacuum_prob = self.vacuum_prob()
+            prob = vacuum_prob * prob
+
         return prob / np.prod(factorial(outcome))
 
 
