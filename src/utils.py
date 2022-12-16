@@ -142,7 +142,7 @@ class RandomUtils:
     def random_interferometer(M, depth):
         """
         Generates random interferometer in Clements scheme, where angles for every phase shifter and beamsplitter
-        given by a random number between 0 and 0.5pi
+        given by a random number between 0 and 2pi
         :param M: Number of modes
         :param depth: Depth of interferometer
 
@@ -161,8 +161,8 @@ class RandomUtils:
 
             for i in range(p - shift):
                 j = 2 * i + 1 + k % 2  # Clements interferometer mode index starts from 1
-                phase = 0.5 * random.random() * np.pi
-                angle = 0.5 * random.random() * np.pi
+                phase = 2 * random.random() * np.pi
+                angle = 2 * random.random() * np.pi
 
                 bs = itf.Beamsplitter(j, j + 1, angle, phase)
 
