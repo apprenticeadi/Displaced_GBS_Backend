@@ -11,8 +11,7 @@ from src.gbs_experiment import PureGBS, sudGBS, sduGBS
 from src.utils import LogUtils, DFUtils
 
 # This script sets up an experiment and calculates the probabilities
-# TODO: for each (M,N) run a bunch of experiments with different unitaries and try averaging.
-# TODO: Check correctness of result. Because I'm not calculating the prefactor, I don't think it should be too big a problem.
+# TODO: parallelize this
 # <<<<<<<<<<<<<<<<<<< Logging  >>>>>>>>>>>>>>>>>>
 time_stamp = datetime.datetime.now().strftime("%d-%m-%Y(%H-%M-%S.%f)")
 dir = r'..\Results\anticoncentration\{}'.format(time_stamp)
@@ -107,7 +106,7 @@ for iter, M in enumerate(Ms):
         plt.axhline(y=1 / num_prob, xmin=0, xmax=num_prob, color='black', label=f'1/({M} choose {N_int})')
         plt.axhline(y= alpha / num_prob, xmin=0, xmax=num_prob, color='red', label=f'0.01/({M} choose {N_int})')
         plt.legend()
-        plt.savefig(DFUtils.create_filename(plot_dir + fr'\plot_M={M}_N={N}.pdf'))
+        plt.savefig(DFUtils.create_filename(plot_dir + fr'\plot_M={M}_N={N}.png'))
 
     # <<<<<<<<<<<<<<<<<<< Save data array  >>>>>>>>>>>>>>>>>>
     np.save(DFUtils.create_filename(dir2 + r'\lhaf2.npy'), all_displaced_probs)
@@ -131,7 +130,7 @@ if plotting:
     plt.ylabel('beta')
     plt.ylim([0.5, 1])
     plt.title('beta against M')
-    plt.savefig(plot_dir + fr'\plot_acc_betas.pdf')
+    plt.savefig(plot_dir + fr'\plot_acc_betas.png')
 
 
 

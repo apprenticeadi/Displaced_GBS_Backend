@@ -17,7 +17,7 @@ Ms = np.arange(M_min, M_max+1)
 depth = 4
 sq_dis_ratio = 1
 alpha = 1  # the alpha in anti-concentration
-repeat = 100
+repeat = 1000
 
 # This script sets up an experiment and calculates the probabilities
 # <<<<<<<<<<<<<<<<<<< Logging  >>>>>>>>>>>>>>>>>>
@@ -31,8 +31,8 @@ logging.info('Generate bounded degree DisplacedGBS experiment and benchmark Anti
 
 # <<<<<<<<<<<<<<<<<<< Optional parameters  >>>>>>>>>>>>>>>>>>
 
-save_U = True
-plotting = True
+save_U = False
+plotting = False
 if plotting:
     plot_dir = dir + r'\plots'
 
@@ -111,7 +111,7 @@ for iter, M in enumerate(Ms):
         plt.axhline(y=1 / num_prob, xmin=0, xmax=num_prob, color='black', label=f'1/({M} choose {N_int})')
         plt.axhline(y= alpha / num_prob, xmin=0, xmax=num_prob, color='red', label=f'0.01/({M} choose {N_int})')
         plt.legend()
-        plt.savefig(DFUtils.create_filename(plot_dir + fr'\plot_M={M}_N={N_int}.pdf'))
+        plt.savefig(DFUtils.create_filename(plot_dir + fr'\plot_M={M}_N={N_int}.png'))
 
     # <<<<<<<<<<<<<<<<<<< Save data array  >>>>>>>>>>>>>>>>>>
     np.save(DFUtils.create_filename(dir2 + r'\lhaf2.npy'), all_displaced_probs)
@@ -135,7 +135,7 @@ if plotting:
     plt.ylabel('beta')
     plt.ylim([0, 1])
     plt.title('beta against M')
-    plt.savefig(plot_dir + fr'\plot_acc_betas.pdf')
+    plt.savefig(plot_dir + fr'\plot_acc_betas.png')
 
 
 

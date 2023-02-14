@@ -4,10 +4,10 @@ from src.utils import DFUtils
 import math
 
 
-time_stamp = r'\M=9-20_d=4_14-02-2023(16-38-05.352564)'
+time_stamp = r'\M=9-20_d=2_14-02-2023(18-03-12.659150)'
 
 Ms = np.arange(9, 21)
-depth = 4
+depth = 2
 dir = r'..\Results\bounded_anticoncentration' + time_stamp
 savefig = True
 if savefig:
@@ -50,7 +50,7 @@ for it_M, M in enumerate(Ms):
         plt.axhline(y= alpha / num_prob, xmin=0, xmax=num_prob, color = cycle[j], label=f'{alpha}/({M} choose {N_int})')
     plt.legend()
     if savefig:
-        plt.savefig(DFUtils.create_filename(plot_dir + fr'\plot_M={M}_N={N_int}.pdf'))
+        plt.savefig(DFUtils.create_filename(plot_dir + fr'\plot_M={M}_N={N_int}.png'))
 
 test = np.allclose(betas_dict[0.01][0], np.load(dir + r'\acc_beta_means.npy'))
 test2 = np.allclose(betas_dict[0.01][1], np.load(dir + r'\acc_beta_errs.npy'))
@@ -68,4 +68,4 @@ plt.ylim([0, 1])
 plt.legend()
 plt.title(f'beta against M for depth={depth}')
 if savefig:
-    plt.savefig(plot_dir + fr'\plot_acc_betas.pdf')
+    plt.savefig(plot_dir + fr'\plot_acc_betas.png')

@@ -8,7 +8,7 @@ time_stamp = r'\13-02-2023(19-04-51.793796)'
 
 Ms = np.arange(9, 21)
 dir = r'..\Results\anticoncentration' + time_stamp
-savefig = True
+savefig = False
 if savefig:
     plot_dir = dir + r'\plots'
 cycle = plt.rcParams['axes.prop_cycle'].by_key()['color']
@@ -49,7 +49,7 @@ for it_M, M in enumerate(Ms):
         plt.axhline(y= alpha / num_prob, xmin=0, xmax=num_prob, color = cycle[j], label=f'{alpha}/({M} choose {N_int})')
     plt.legend()
     if savefig:
-        plt.savefig(DFUtils.create_filename(plot_dir + fr'\plot_M={M}_N={N_int}.pdf'))
+        plt.savefig(DFUtils.create_filename(plot_dir + fr'\plot_M={M}_N={N_int}.png'))
 
 test = np.allclose(betas_dict[0.01][0], np.load(dir + r'\acc_beta_means.npy'))
 test2 = np.allclose(betas_dict[0.01][1], np.load(dir + r'\acc_beta_errs.npy'))
@@ -67,4 +67,4 @@ plt.ylim([0, 1])
 plt.legend()
 plt.title('beta against M')
 if savefig:
-    plt.savefig(plot_dir + fr'\plot_acc_betas.pdf')
+    plt.savefig(plot_dir + fr'\plot_acc_betas.png')
