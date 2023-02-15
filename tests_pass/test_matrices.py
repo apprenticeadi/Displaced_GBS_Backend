@@ -11,8 +11,8 @@ from thewalrus.quantum import complex_to_real_displacements, Amat, probabilities
 
 M = 10
 U = unitary_group.rvs(M)
-r = np.random.uniform(low=0.5, high=2, size=(M, ))
-alpha = np.random.uniform(low=1, high=3, size=(M,))
+r = 10 * np.random.random() * np.ones(M)
+alpha = 10 * np.random.random() * np.ones(M)
 
 print(U)
 print(r)
@@ -44,3 +44,8 @@ Gamma_walrus = beta_walrus.conj() - A_walrus @ beta_walrus
 
 print(np.allclose(A, A_walrus))
 print(np.allclose(Gamma, Gamma_walrus))
+
+
+Gamma_simplified = alpha[0] * (1 - np.tanh(r[0])) * np.sum(U, axis=1)
+
+print(np.allclose(Gamma_simplified, Gamma_walrus[:M]))
