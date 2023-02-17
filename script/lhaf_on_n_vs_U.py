@@ -38,13 +38,13 @@ if plotting:
     plot_dir = dir + r'\plots'
 
 # <<<<<<<<<<<<<<<<<<< Function for calculating lhaf  >>>>>>>>>>>>>>>>>>
-def loop_hafnian_squared(B, gamma, outcome, print_msg=True):
+def loop_hafnian_squared(B, gamma, outcome, print_msg=True, loop=True):
     B_n = MatrixUtils.n_repetition(B, outcome)
     gamma_n = MatrixUtils.n_repetition(gamma, outcome)
     haf_B = MatrixUtils.filldiag(B_n, gamma_n)
 
     time1 = time.time()
-    lhaf2 = np.absolute(hafnian(haf_B, loop=True)) ** 2
+    lhaf2 = np.absolute(hafnian(haf_B, loop=loop)) ** 2
     time2 = time.time()
 
     if print_msg:
@@ -98,22 +98,69 @@ time_final=time.time()
 np.save(DFUtils.create_filename(dir+r'\lhaf2_over_U.npy'), lhaf2s_U)
 logging.info(f'Time={time_final-time_initial} to calculate {repeat} {N}*{N} loop Hafnian squared of interest for fixed n random U')
 
-# <<<<<<<<<<<<<<<<<<< Printing  >>>>>>>>>>>>>>>>>>
+# <<<<<<<<<<<<<<<<<<< Same n, different U, haf^2  >>>>>>>>>>>>>>>>>>
+outcome_U = np.zeros(M, dtype=int)
+outcome_U[:N] = 1
+haf2s_U = np.zeros(repeat, dtype=float)
+time_initial = time.time()
+for iter in range(repeat):
+
+    U = unitary_group.rvs(M)
+    if save_U:
+        np.save(DFUtils.create_filename(dir + rf'U_{iter+1}.npy'), U)
+
+
+    B = U @ U.T
+    gamma = w * np.sum(U, axis=1)
+
+    haf2 = loop_hafnian_squared(B, gamma, outcome_U, loop=False)
+
+    haf2s_U[iter] = haf2
+
+time_final=time.time()
+np.save(DFUtils.create_filename(dir+r'\haf2_over_U.npy'), haf2s_U)
+logging.info(f'Time={time_final-time_initial} to calculate {repeat} {N}*{N} loop Hafnian squared of interest for fixed n random U')
+
+
+
+
+# <<<<<<<<<<<<<<<<<<< Plotting  >>>>>>>>>>>>>>>>>>
 lhaf2s_n[::-1].sort()
 lhaf2s_U[::-1].sort()
+haf2s_U[::-1].sort()
 
 if plotting:
     plt.figure('lhaf squared')
 
-    plt.plot(list(range(repeat)), lhaf2s_n, '-', label='Over n')
-    plt.plot(list(range(repeat)), lhaf2s_U, '--', label='Over U')
+    plt.plot(list(range(repeat)), lhaf2s_n, '-', label='|lhaf|^2 over n')
+    plt.plot(list(range(repeat)), lhaf2s_U, '--', label='|lhaf|^2 over U')
+    plt.plot(list(range(repeat)), haf2s_U, '--', label='|haf|^2 over U')
 
     plt.xticks([0, repeat])
     plt.yscale('log')
     plt.legend()
     plt.xlabel('Instances')
     plt.ylabel('|lHaf|^2')
-    plt.title('Distribution of |lHaf|^2 over fixed U, random n vs fixed n, random U')
+    plt.title('Distribution of unnormalised |lHaf|^2 over fixed U, random n vs fixed n, random U')
 
     plt.savefig(DFUtils.create_filename(plot_dir + fr'\plot_lhaf2.png'))
 
+    plt.figure('normalised lhaf squared')
+
+    lhaf2s_n = lhaf2s_n / np.sum(lhaf2s_n)
+    lhaf2s_U = lhaf2s_U / np.sum(lhaf2s_U)
+    haf2s_U = haf2s_U / np.sum(haf2s_U)
+
+
+    plt.plot(list(range(repeat)), lhaf2s_n, '-', label='|lhaf|^2 over n')
+    plt.plot(list(range(repeat)), lhaf2s_U, '--', label='|lhaf|^2 over U')
+    plt.plot(list(range(repeat)), haf2s_U, '--', label='|haf|^2 over U')
+
+    plt.xticks([0, repeat])
+    plt.yscale('log')
+    plt.legend()
+    plt.xlabel('Instances')
+    plt.ylabel('|lHaf|^2')
+    plt.title('Distribution of normalised |lHaf|^2 over fixed U, random n vs fixed n, random U')
+
+    plt.savefig(DFUtils.create_filename(plot_dir + fr'\plot_lhaf2_normalised.png'))
