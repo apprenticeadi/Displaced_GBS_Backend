@@ -7,8 +7,9 @@ from src.gbs_experiment import sduGBS
 
 from thewalrus import hafnian
 
-M = 225
-N = int(np.floor(np.sqrt(M)))
+N = 32  # 32 is the limit on tabletop computer without parallelization
+M = N ** 2
+
 outcome = np.zeros(M, dtype=int)
 outcome[:N] = 1
 loop = True
