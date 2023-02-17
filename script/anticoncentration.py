@@ -17,9 +17,7 @@ time_stamp = datetime.datetime.now().strftime("%d-%m-%Y(%H-%M-%S.%f)")
 dir = r'..\Results\anticoncentration\{}'.format(time_stamp)
 LogUtils.log_config(time_stamp='', dir=dir, filehead='log', module_name='', level=logging.INFO)
 
-logging.info('Generate DisplacedGBS experiment and benchmark Anticoncentration. '
-             'The probabilities are unnormalised and only give |lhaf|^2. '
-             'The experiment is repeated many times for different unitaries.')
+logging.info('Benchmark Anticoncentration. ')
 
 # <<<<<<<<<<<<<<<<<<< Basic parameters  >>>>>>>>>>>>>>>>>>
 Ms = np.arange(9,21)
