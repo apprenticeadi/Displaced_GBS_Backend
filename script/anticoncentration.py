@@ -19,17 +19,17 @@ LogUtils.log_config(time_stamp='', dir=dir, filehead='log', module_name='', leve
 
 logging.info('Benchmark Anticoncentration for two weightings, w1 = 1/sqrt(M), and w2=1. '
              'Raw data files are saved for each (M,N). Each row is a unitary U drawn from Haar measure. '
-             'Each row consists of 4 values: [lhaf^2 for w1, lhaf^2 for w2, haf^2]. haf^2 doesnt care about w value')
+             'Each row consists of 3 values: [lhaf^2 for w1, lhaf^2 for w2, haf^2]. haf^2 doesnt care about w value')
 
 # <<<<<<<<<<<<<<<<<<< Basic parameters  >>>>>>>>>>>>>>>>>>
-Ns = np.arange(4, 21, step=2)
+Ns = np.arange(4, 33, step=2)
 
 repeat = 1000
 
 logging.info(f'N takes {Ns}, repeat = {repeat}')
 
 save_U = False
-plotting = True
+plotting = False
 if plotting:
     plot_dir = dir + r'\plots'
 
@@ -71,7 +71,7 @@ for iter, N in enumerate(Ns):
     time_final = time.time()
     logging.info(f'N={N}, time to calculate {repeat}*3 lhaf^2 is {time_final - time_intial:.3}')
 
-    np.save(DFUtils.create_filename(dir_raw + r'\lhaf2_raw.npy'), lhaf2s)
+    np.save(dir_raw + r'_lhaf2_raw.npy', lhaf2s)
 
     if plotting:
 
