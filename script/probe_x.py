@@ -93,14 +93,14 @@ np.save(dir + fr'\x_min_and_max_against_M.npy', data)
 # <<<<<<<<<<<<<<<<<<< Plotting  >>>>>>>>>>>>>>>>>>
 
 plt.figure(1)
-plt.errorbar(data[:,0], data[:, 1], yerr=data[:,2], label='min(|x|)')
+plt.errorbar(data[:64,0], data[:64, 1], yerr=data[:64,2], label='min(|x|)')
 plt.errorbar(data[:,0], data[:, 3], yerr=data[:,4], label='max(|x|)')
 plt.errorbar(data[:,0], data[:, 5], yerr=data[:,6], label='min(sum|x|)')
 plt.errorbar(data[:,0], data[:, 7], yerr=data[:,8], label='max(sum|x|)')
 
 plt.plot(Ms, 1/Ms, label='1/M', linestyle = '-', color='black')
 plt.plot(Ms, 1/Ms**2, label='1/M^2', linestyle='--', color='black')
-
+plt.plot(Ms, 1/np.sqrt(Ms), label='1/sqrt(M)', linestyle='-.', color='black')
 plt.xscale('log')
 plt.yscale('log')
 plt.xlabel('M')
