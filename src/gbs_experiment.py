@@ -1,3 +1,5 @@
+import time
+
 from strawberryfields.decompositions import takagi
 import numpy as np
 import random
@@ -110,13 +112,17 @@ class PureGBS:
 
     def lhaf(self, outcome, displacement = True):
         outcome = np.atleast_1d(outcome)
+
         B = self.calc_B()
         half_gamma = self.calc_half_gamma()
+
         B_n = MatrixUtils.n_repetition(B, outcome)
         half_gamma_n = MatrixUtils.n_repetition(half_gamma, outcome)
-        haf_B = MatrixUtils.filldiag(B_n, half_gamma_n)
 
-        lhafnian = hafnian(haf_B, loop=displacement)
+        np.fill_diagonal(B_n, half_gamma_n)
+        # haf_B = MatrixUtils.filldiag(B_n, half_gamma_n)
+
+        lhafnian = hafnian(B_n, loop=displacement)
 
         return lhafnian
 
