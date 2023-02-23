@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 from src.utils import MatrixUtils, LogUtils, DFUtils
 
 # <<<<<<<<<<<<<<<<<<< Parameters  >>>>>>>>>>>>>>>>>>
-Ms = np.arange(start=10, stop=1010, step=10)
+Ms = np.arange(start=10, stop=210, step=10)
 M_num = len(Ms)
 repeat = 1000  # For each M, we average over this many Haar random unitaries
 w = 1  # The diagonal weight.
@@ -49,11 +49,11 @@ for iter, M in enumerate(Ms):
         if save_raw_x:
             np.save(DFUtils.create_filename(dir + fr'\raw\M={M}\raw_x_{i}.npy'), x)
 
+        x_n = x[:N, :N]  # we only want the top left N times N submatrix
         x_abs = np.absolute(x)
         masked_x_abs = x_abs[
             ~np.eye(len(x_abs), dtype=bool)]  # mask out diagonal terms which are zero. masked shaped is 1d
-        x_n = x[:N, :N]  # we only want the top left N times N submatrix
-        sum_x_abs = np.absolute(np.sum(x_n, axis=1))
+        sum_x_abs = np.sum(x_abs[:N,:N], axis=1)
 
         data_M_i[i] = np.array([np.min(masked_x_abs), np.max(masked_x_abs), np.min(sum_x_abs), np.max(sum_x_abs)])
 
@@ -81,9 +81,9 @@ np.save(dir + fr'\x_min_and_max_against_M.npy', data)
 
 plt.figure(1)
 plt.errorbar(data[:, 0], data[:, 1], yerr=data[:, 2], label='min(|x|)')
-plt.errorbar(data[:, 0], data[:, 3], yerr=data[:, 4], label='max(|x|)')
-plt.errorbar(data[:, 0], data[:, 5], yerr=data[:, 6], label='min(sum|x|)')
-plt.errorbar(data[:, 0], data[:, 7], yerr=data[:, 8], label='max(sum|x|)')
+plt.plot(data[:, 0], data[:, 3], label='max(|x|)')
+plt.plot(data[:, 0], data[:, 5], label='min(sum|x|)')
+plt.plot(data[:, 0], data[:, 7], label='max(sum|x|)')
 
 plt.plot(Ms, 1 / Ms, label='1/M', linestyle='-', color='black')
 plt.plot(Ms, 1 / Ms ** 2, label='1/M^2', linestyle='--', color='black')
@@ -92,6 +92,22 @@ plt.xscale('log')
 plt.yscale('log')
 plt.xlabel('M')
 plt.legend()
+
+plt.ylim(bottom=1e-7)
+
+# plt.figure(2)
+# plt.errorbar(data[:, 0], data[:, 1], yerr=data[:, 2], label='min(|x|)')
+# plt.errorbar(data[:, 0], data[:, 3], yerr=data[:, 4], label='max(|x|)')
+# plt.errorbar(data[:, 0], data[:, 5], yerr=data[:, 6], label='min(sum|x|)')
+# plt.errorbar(data[:, 0], data[:, 7], yerr=data[:, 8], label='max(sum|x|)')
+#
+# plt.plot(Ms, 1 / Ms, label='1/M', linestyle='-', color='black')
+# plt.plot(Ms, 1 / Ms ** 2, label='1/M^2', linestyle='--', color='black')
+# plt.plot(Ms, 1 / np.sqrt(Ms), label='1/sqrt(M)', linestyle='-.', color='black')
+# plt.xscale('log')
+# plt.yscale('log')
+# plt.xlabel('M')
+# plt.legend()
 
 if save_fig:
     plt.savefig(dir + r'\Plot_x_data_against_M.png')
