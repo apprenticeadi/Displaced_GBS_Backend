@@ -1,5 +1,4 @@
 import time
-
 from strawberryfields.decompositions import takagi
 import numpy as np
 import random
@@ -9,6 +8,7 @@ from scipy.special import factorial
 from src.gbs_matrix import GBSMatrix, GaussianMatrix
 from src.utils import MatrixUtils
 from src.symplectic import Symplectic, SymplecticXXPP
+from src.photon_number_distributions import single_displaced_squeezed_vacuum, total_displaced_squeezed_vacuum
 
 from thewalrus import hafnian
 
@@ -348,3 +348,22 @@ class sduGBS(sudGBS):
         exponent = 2 * np.sum(np.abs(betas)**2) - np.sum( np.tanh(rs) * (betas**2 + np.conj(betas)**2) )
 
         return np.exp(-0.5 * exponent) / np.prod(np.absolute(np.cosh(rs)))
+
+    def photon_number_distribution(self, mode, cutoff):
+        """
+        Find the photon number distribution of a single mode up to cutoff
+        """
+        betas = self.get_betas()
+        beta = betas[mode]
+        rs = self.get_rs()
+        r = rs[mode]
+
+        if r == 0:
+            raise Exception('Current functions do not support photon number distribution of unsqueezed states')
+
+        return single_displaced_squeezed_vacuum(r, beta, cutoff)
+
+
+
+
+
