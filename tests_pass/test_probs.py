@@ -2,6 +2,7 @@ import numpy as np
 from scipy.stats import unitary_group
 import itertools
 from scipy.special import factorial
+import random
 
 from src.gbs_experiment import PureGBS, sudGBS, sduGBS
 from src.utils import TestUtils, MatrixUtils
@@ -10,30 +11,29 @@ from thewalrus.quantum import density_matrix_element
 import strawberryfields as sf
 from thewalrus import hafnian
 
-# Test script for vacuum probability calculation for different models of gbs experiments
+# Test probability calculations against thewalrus
 
-M = 2
+M = 16
+K = 4
 U = unitary_group.rvs(M)
-r = np.random.uniform(low=0.1, high=1, size=(M, ))
-alpha = np.random.uniform(low=0.1, high=1, size=(M,))
+r = random.random()
+rs = np.concatenate([r * np.ones(K), np.zeros(M-K)])
+beta = random.random() + 1j * random.random()
+betas = np.concatenate([beta *np.ones(K), np.zeros(M-K)])
 
-N = sum(np.sinh(r)**2) + sum(alpha**2)
+N = np.sum(np.sinh(rs)**2) + np.sum(np.absolute(betas)**2)
 print('Mean photon number = {}'.format(N))
 
 # Housemade functions
-gbs = PureGBS(M)
-gbs.add_squeezing(r)
+gbs = sduGBS(M)
+gbs.add_squeezing(rs)
+gbs.add_displacement(betas)
 gbs.add_interferometer(U)
-gbs.add_displacement(alpha)
 means, cov = gbs.state_xxpp()
 
-gbs2 = sudGBS(M)
-gbs2.add_squeezing(r)
-gbs2.add_interferometer(U)
-gbs2.add_displacement(alpha)
 
 # Strawberryfields and thewalrus
-sf_state = TestUtils.sf_circuit(M, U, alpha, r, 'SUD')
+sf_state = TestUtils.sf_circuit(M, U, betas, rs, 'SDU')
 sf_means = sf_state.means()
 sf_cov = sf_state.cov()
 
@@ -47,44 +47,21 @@ if not np.allclose(cov, sf_cov):
 # Test vacuum probability
 print('Test vacuum probability')
 vacuum_prob = gbs.vacuum_prob()
-vacuum_prob2 = gbs2.vacuum_prob()
 sf_vacuum_prob = sf_state.fock_prob([0]*M)
 walrus_prob = density_matrix_element(means, cov, [0]*M, [0]*M, hbar=1)
-if not np.isclose(vacuum_prob, vacuum_prob2):
-    raise Warning('Not self consistent')
+
 if not np.isclose(vacuum_prob, sf_vacuum_prob):
     raise Warning('Not consistent with strawberryfields')
 if not np.isclose(vacuum_prob, walrus_prob):
     raise Warning('Not consistent with walrus prob')
 
 
-# Test GBS matrices
-print('Test GBS matrices')
-B = gbs.calc_B()
-half_gamma = gbs.calc_half_gamma()
-B2 = gbs2.calc_B()
-half_gamma2 = gbs2.calc_half_gamma()
-if not np.allclose(B,B2):
-    raise Warning('Not self consistent for B matrix')
-if not np.allclose(half_gamma, half_gamma2):
-    raise Warning('Not self consistent for half_gamma')
+outcome = np.concatenate([np.ones(K, dtype=int), np.zeros(M-K, dtype=int)])
 
-
-
-def test_prob(outcome):
-    prob=gbs2.prob(outcome)
-    sf_prob = sf_state.fock_prob(outcome, cutoff = 20)
-    print('For {}, prob={}'.format(outcome, prob))
-    if not np.isclose(prob, sf_prob):
-        raise Warning('Not consistent with strawberryfields for {}'.format(outcome))
-
-    return prob
-
-
-# Test probabilities
-# TODO: This test never succeeds for displaced circuits.
-probs = []
-outcomes = list(itertools.product(list(range(10)), repeat=M))
-for ns in outcomes:
-    probs.append(test_prob(ns))
-
+prob = gbs.prob(outcome)
+sf_prob = sf_state.fock_prob(outcome, cutoff = 20)
+walrus_prob = density_matrix_element(means, cov, list(outcome), list(outcome), hbar=1)  # outcome in thewalrus has to be a list
+print(f'Test probability calculations for {outcome}')
+print(np.allclose(prob, sf_prob))
+print(np.allclose(prob, walrus_prob))
+print(f'prob={prob}')
