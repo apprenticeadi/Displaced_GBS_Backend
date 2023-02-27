@@ -284,7 +284,7 @@ class sudGBS(PureGBS):
         alphas = self.get_alphas()
         rs = self.get_rs()
 
-        return np.exp((alphas @ B @ alphas.conjugate()).real - sum(np.absolute(alphas)**2)) / np.prod(np.absolute(np.cosh(rs)))
+        return np.exp((alphas @ B @ alphas).real - sum(np.absolute(alphas)**2)) / np.prod(np.absolute(np.cosh(rs)))
 
     # def prob(self, outcome):
     #
@@ -302,6 +302,11 @@ class sudGBS(PureGBS):
 
 class sduGBS(sudGBS):
 
+    def __init__(self, M):
+
+        super().__init__(M)
+        self.__betas = np.zeros(M)
+
     # Override
     def add_displacement(self, betas):
         """Add displacement before interferometer"""
@@ -309,14 +314,18 @@ class sduGBS(sudGBS):
         if self.added_dis:
             raise Exception("You added displacement already")
 
+        betas = np.asarray(betas)
+        self.__betas = copy.deepcopy(betas)
+
         if self.added_intf:
-            self.added_dis = False
             U = self.get_U()
             alphas = U.conjugate() @ betas
             super().add_displacement(alphas)
         else:
             super().add_displacement(betas)
 
+    def get_betas(self):
+        return copy.deepcopy(self.__betas)
 
     # Override
     def add_interferometer(self, U):
@@ -330,3 +339,12 @@ class sduGBS(sudGBS):
             alphas = self.get_alphas()
             alphas = U.conjugate() @ alphas
             super().add_displacement(alphas)
+
+    # Override
+    def vacuum_prob(self):
+        betas = self.get_betas()
+        rs = self.get_rs()
+
+        exponent = 2 * np.sum(np.abs(betas)**2) - np.sum( np.tanh(rs) * (betas**2 + np.conj(betas)**2) )
+
+        return np.exp(-0.5 * exponent) / np.prod(np.absolute(np.cosh(rs)))
