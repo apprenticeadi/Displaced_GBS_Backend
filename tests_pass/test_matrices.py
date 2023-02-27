@@ -7,27 +7,31 @@ from src.utils import TestUtils
 import strawberryfields as sf
 from thewalrus.quantum import complex_to_real_displacements, Amat, probabilities
 
-# Test that gbs_experiment.py against strawberry fields
+# Test gbs_experiment.py against strawberry fields
 
-M = 10
+M = 16
+K = 4
 U = unitary_group.rvs(M)
-r = 10 * np.random.random() * np.ones(M)
-alpha = 10 * np.random.random() * np.ones(M)
+r = np.random.random()
+rs = np.concatenate([r * np.ones(K), np.zeros(M-K)])
+beta = np.random.random() + 1j * np.random.random()
+betas =  np.concatenate([beta * np.ones(K), np.zeros(M-K)])
+
 
 print(U)
-print(r)
-print(alpha)
+print(rs)
+print(betas)
 
 # Housemade functions
 gbs = sduGBS(M)
-gbs.add_squeezing(r)
-gbs.add_displacement(alpha)
+gbs.add_squeezing(rs)
+gbs.add_displacement(betas)
 gbs.add_interferometer(U)
 means, cov = gbs.state_xxpp()
 
 
 # Strawberryfields and thewalrus
-sf_state = TestUtils.sf_circuit(M, U, alpha, r, 'SDU', hbar=1)
+sf_state = TestUtils.sf_circuit(M, U, betas, rs, 'SDU', hbar=1)
 sf_cov = sf_state.cov()
 sf_means = sf_state.means()
 
@@ -39,13 +43,13 @@ A = gbs.calc_A()
 Gamma = gbs.calc_Gamma()
 
 A_walrus = Amat(sf_cov, hbar=1)
-beta_walrus = complex_to_real_displacements(sf_means, hbar=1)  # this is (alpha, alpha.conj()) in our notation. alpha is the displacement in each mode after interferometer.
-Gamma_walrus = beta_walrus.conj() - A_walrus @ beta_walrus
+alpha_walrus = complex_to_real_displacements(sf_means, hbar=1)  # this is (alpha, alpha.conj()) in our notation. alpha is the displacement in each mode after interferometer.
+Gamma_walrus = alpha_walrus.conj() - A_walrus @ alpha_walrus
 
 print(np.allclose(A, A_walrus))
 print(np.allclose(Gamma, Gamma_walrus))
 
 
-Gamma_simplified = alpha[0] * (1 - np.tanh(r[0])) * np.sum(U, axis=1)
+Gamma_simplified =  (beta.conjugate() - np.tanh(r) * beta) * np.sum(U[:, :K], axis=1)
 
 print(np.allclose(Gamma_simplified, Gamma_walrus[:M]))

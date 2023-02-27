@@ -192,7 +192,7 @@ class LogUtils:
 class TestUtils:
 
     @staticmethod
-    def sf_circuit(M, U, alpha, r, order='SUD', hbar=1):
+    def sf_circuit(M, U, alphas, rs, order='SUD', hbar=1):
         """Generate strawberryfields state for GBS circuit from strawberryfields"""
 
         import strawberryfields as sf
@@ -204,19 +204,19 @@ class TestUtils:
         prog = sf.Program(M)  # creates an M mode quantum program
 
         U = U.conjugate()  # Conjugate here due to convention difference
-        r = - np.atleast_1d(r)  # Add minus sign here, because strawberry fields use different convention for squeezing (off by minus sign)
-        alpha = np.atleast_1d(alpha)
+        rs = - np.atleast_1d(rs)  # Add minus sign here, because strawberry fields use different convention for squeezing (off by minus sign)
+        alphas = np.atleast_1d(alphas)
 
         with prog.context as q:
 
             for operation in list(order):
                 if operation == 'S':
-                    for i, r_i in enumerate(r):
+                    for i, r_i in enumerate(rs):
                         ops.Sgate(r=np.absolute(r_i), phi=np.angle(r_i)) | q[i]
                 elif operation == 'U':
                     ops.Interferometer(U) | q
                 elif operation == 'D':
-                    for j, alpha_j in enumerate(alpha):
+                    for j, alpha_j in enumerate(alphas):
                         ops.Dgate(r=np.absolute(alpha_j), phi=np.angle(alpha_j)) | q[j]
                 else:
                     raise ValueError('Order not recognized')
