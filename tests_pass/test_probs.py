@@ -21,6 +21,8 @@ rs = np.concatenate([r * np.ones(K), np.zeros(M-K)])
 beta = random.random() + 1j * random.random()
 betas = np.concatenate([beta *np.ones(K), np.zeros(M-K)])
 
+outcome = np.concatenate([np.ones(K, dtype=int), np.zeros(M-K, dtype=int)])
+
 N = np.sum(np.sinh(rs)**2) + np.sum(np.absolute(betas)**2)
 print('Mean photon number = {}'.format(N))
 
@@ -56,7 +58,7 @@ if not np.isclose(vacuum_prob, walrus_prob):
     raise Warning('Not consistent with walrus prob')
 
 
-outcome = np.concatenate([np.ones(K, dtype=int), np.zeros(M-K, dtype=int)])
+
 
 prob = gbs.prob(outcome)
 sf_prob = sf_state.fock_prob(outcome, cutoff = 20)
