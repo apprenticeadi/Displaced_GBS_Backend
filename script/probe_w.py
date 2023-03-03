@@ -49,17 +49,16 @@ for i, n in enumerate(n_list):
     Z_abs_values = calc_Z_abs_values(n, num_trials, M)
     t1 = time.time()
 
-
     np.save(dir + fr'\N={n}.npy', Z_abs_values)
-    t2 = time.time()
 
     min_Z_abs = np.min(Z_abs_values)
     mean_Z_abs = np.mean(Z_abs_values)
     std_Z_abs = np.std(Z_abs_values)
 
     stats[i] = np.array([n, min_Z_abs, mean_Z_abs, std_Z_abs])
+    t2 = time.time()
 
-    logging.info(f"N={n}, min={min_Z_abs}, mean={mean_Z_abs}, std={std_Z_abs}, time={t1-t0}, save_time = {t2-t1}")
+    logging.info(f"N={n}, min={min_Z_abs}, mean={mean_Z_abs}, std={std_Z_abs}, time={t1-t0}, total time={t2-t0}")
 
     if plot_fig:
         if i  % 10 == 0:
@@ -102,3 +101,4 @@ if plot_fig:
     plt.legend()
     if save_fig:
         plt.savefig(DFUtils.create_filename(plot_dir + r'\std.png'))
+        
