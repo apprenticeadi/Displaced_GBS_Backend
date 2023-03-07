@@ -7,7 +7,7 @@ from src.utils import MatrixUtils
 # <<<<<<<<<<<<<<<<<<< Size  >>>>>>>>>>>>>>>>>>
 M = 100
 N = int(np.floor(np.sqrt(M)))
-w = 1 / N  # The diagonal weight.
+w = 1   # The diagonal weight.
 
 U = unitary_group.rvs(M)
 
@@ -15,30 +15,36 @@ B = U @ U.T  # The tanhr term is absorbed inside w
 half_gamma = w * np.sum(U, axis=1)
 x = B / np.outer(half_gamma, half_gamma)
 x = MatrixUtils.filldiag(x, np.zeros(M))  # We don't want x_ii
+masked_x = x[
+            ~np.eye(len(x), dtype=bool)]  # mask out diagonal terms which are zero. masked shaped is 1d
+x_n = x[:N, :N]
+abs_x = np.absolute(x_n)
+sum_x = np.sum(abs_x, axis=1)
 
-sum_x = np.sum(x, axis=1)
-
-axis_lim = max(np.abs(np.union1d(x.real, x.imag)))
+axis_lim = 1e3
 
 plt.figure(f'Plot of |x| for M={M}, w={w}')
 plt.axhline(y=0, xmin=-axis_lim, xmax=axis_lim, color='black')
 plt.axvline(x=0, ymin=-axis_lim, ymax=axis_lim, color='black')
-circle1 = plt.Circle((0,0), 1, color='r', alpha=0.5)
-circle2 = plt.Circle((0,0), 1/N, color='yellow', alpha=1)
+circle1 = plt.Circle((0,0), 1, color='r', alpha=0.5, label='Radius 1')
+circle2 = plt.Circle((0,0), 1/N, color='yellow', alpha=1, label='Radius 1/N')
+circle3 = plt.Circle((0,0), 1/N**4, color='orange', alpha=1, label='Radius 1/N**4')
 plt.gca().add_patch(circle1)
 plt.gca().add_patch(circle2)
-plt.scatter(x.real, x.imag, marker='.')
+plt.gca().add_patch(circle3)
+plt.scatter(masked_x.real, masked_x.imag, marker='.')
 plt.xlim(left=-axis_lim, right=axis_lim)
 plt.ylim(bottom=-axis_lim, top=axis_lim)
-plt.yscale('symlog', linthresh = 10**np.floor(np.log10(1/N)))
-plt.xscale('symlog', linthresh = 10**np.floor(np.log10(1/N)))
-plt.title(f'Scatter plot of |x_ij| for M={M}, w={w}')
+plt.yscale('symlog', linthresh = 10**np.floor(np.log10(1/N**4)))
+plt.xscale('symlog', linthresh = 10**np.floor(np.log10(1/N**4)))
+plt.legend()
+plt.title(f'Scatter plot of x_ij for M={M}, w={w}')
 
 plt.figure(f'Plot of sum |x| for M={M}, w={w}')
 plt.axhline(y=0, xmin=-axis_lim, xmax=axis_lim, color='black')
 plt.axvline(x=0, ymin=-axis_lim, ymax=axis_lim, color='black')
-circle1 = plt.Circle((0,0), 1, color='r', alpha=0.5)
-circle2 = plt.Circle((0,0), 1/N, color='yellow', alpha=1)
+circle1 = plt.Circle((0,0), 1, color='r', alpha=0.5, label='Radius 1')
+circle2 = plt.Circle((0,0), 1/N, color='yellow', alpha=1, label='Radius 1/N')
 plt.gca().add_patch(circle1)
 plt.gca().add_patch(circle2)
 plt.scatter(sum_x.real, sum_x.imag, marker='.')
@@ -46,7 +52,8 @@ plt.xlim(left=-axis_lim, right=axis_lim)
 plt.ylim(bottom=-axis_lim, top=axis_lim)
 plt.yscale('symlog', linthresh = 10**np.floor(np.log10(1/N)))
 plt.xscale('symlog', linthresh = 10**np.floor(np.log10(1/N)))
-plt.title(f'Scatter plot of sum |x_ij| for M={M}, w={w}')
+plt.legend()
+plt.title(f'Scatter plot of sum x_ij for M={M}, w={w}')
 
 
 

@@ -6,6 +6,7 @@ import sys
 import logging
 import datetime
 import copy
+from scipy.optimize import fsolve
 
 import src.interferometer as itf
 
@@ -189,6 +190,7 @@ class LogUtils:
         # make logger print to console (it will not if multithreaded)
         logging.getLogger(module_name).addHandler(stdout_handler)
 
+
 class TestUtils:
 
     @staticmethod
@@ -223,3 +225,32 @@ class TestUtils:
 
         state = eng.run(prog).state
         return state
+
+
+class DGBSUtils:
+    """
+    Some util functions for DisplacedGBS
+    """
+
+    @staticmethod
+    def solve_w(w, N_mean):
+        """
+        Find real squeezing and displacement parameters that satisfy
+        w = beta * (1-tanh(r)) / sqrt(tanh(r))
+        and
+        beta^2 + sinh(r)^2 = N_mean
+
+        :return: real squeezing and displacement parameters (r,beta)
+        """
+
+        def cost(r):
+            if np.sinh(r) ** 2 >= N_mean or r <= 0:
+                return 100000
+            else:
+                return np.sqrt(N_mean - np.sinh(r) ** 2) * (1 - np.tanh(r)) / np.sqrt(np.tanh(r)) - w
+
+        root = fsolve(cost, np.arcsinh(np.sqrt(0.1 * N_mean)))
+        r = root[0]
+        beta = np.sqrt(N_mean - np.sinh(r) ** 2)
+
+        return r, beta
