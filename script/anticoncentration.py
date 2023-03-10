@@ -73,7 +73,7 @@ print_bool = False
 # <<<<<<<<<<<<<<<<<<< Logging  >>>>>>>>>>>>>>>>>>
 time_stamp = datetime.datetime.now().strftime("%d-%m-%Y(%H-%M-%S.%f)")
 dir_head = fr'..\Results\anticoncentration_over_X\{total_repeats}repeats'
-LogUtils.log_config(time_stamp=time_stamp, filehead='log', module_name='', level=logging.INFO)
+LogUtils.log_config(time_stamp=time_stamp, filehead='anticoncentration_over_X', module_name='', level=logging.INFO)
 logging.info(
     f'Benchmark Anticoncentration for different functions over complex Gaussian matrices of mean 0 and variance {var}.'
     f'Loop Hafnian (and Hafnian) is calculated as |lhaf(XX^T, w(sumX))| for different w (w=0). '
@@ -111,9 +111,13 @@ def wrapper_parallel(N, sub_repeats=1000, func='lhaf', w=0, w_string='0'):
         logging.info(f'Calculate {i}-th batch {sub_repeats} {func}s for N={N}, w={w} took time={t_f - t_i}')
 
 
-for iter, N in enumerate(Ns):
+for N in Ns:
     wrapper_parallel(N, sub_repeats=1000, func='det')
+for N in Ns:
     wrapper_parallel(N, sub_repeats=1000, func='lhaf', w=1)
+for N in Ns:
     wrapper_parallel(N, sub_repeats=1000, func='haf')
+for N in Ns:
     wrapper_parallel(N, sub_repeats=1000, func='perm')
+for N in Ns:
     wrapper_parallel(N, sub_repeats=1000, func='lhaf', w=1/N, w_string='1/N')
