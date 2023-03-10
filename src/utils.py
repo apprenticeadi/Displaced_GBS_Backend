@@ -233,6 +233,10 @@ class DGBSUtils:
     """
 
     @staticmethod
+    def calc_w(r, beta):
+        return (beta.conjugate() - beta * np.tanh(r)) / np.sqrt(np.tanh(r))
+
+    @staticmethod
     def solve_w(w, N_mean):
         """
         Find real squeezing and displacement parameters that satisfy
