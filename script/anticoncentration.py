@@ -72,7 +72,7 @@ print_bool = False
 
 # <<<<<<<<<<<<<<<<<<< Logging  >>>>>>>>>>>>>>>>>>
 time_stamp = datetime.datetime.now().strftime("%d-%m-%Y(%H-%M-%S.%f)")
-
+dir_head = fr'..\Results\anticoncentration_over_X\{total_repeats}repeats'
 LogUtils.log_config(time_stamp=time_stamp, filehead='log', module_name='', level=logging.INFO)
 logging.info(
     f'Benchmark Anticoncentration for different functions over complex Gaussian matrices of mean 0 and variance {var}.'
@@ -97,9 +97,9 @@ def wrapper_parallel(N, sub_repeats=1000, func='lhaf', w=0, w_string='0'):
         elif w_string=='0':
             raise ValueError('Give a valid w_string')
 
-        save_dir = fr'..\Results\{func}_w={w_string}_{time_stamp}\N={N}'
+        save_dir = dir_head + fr'\{func}_w={w_string}_{time_stamp}\N={N}'
     else:
-        save_dir = fr'..\Results\{func}_{time_stamp}\N={N}'
+        save_dir = dir_head + fr'\{func}_{time_stamp}\N={N}'
 
     n = total_repeats // sub_repeats
     # for i in numba.prange(n):
