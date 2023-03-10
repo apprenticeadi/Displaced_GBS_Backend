@@ -6,90 +6,111 @@ from sympy.utilities.iterables import multiset_permutations
 import math
 import time
 import matplotlib.pyplot as plt
+import numba
 
-from src.ACC_functions import lhaf_squared
 from src.utils import LogUtils, DFUtils
+from thewalrus import perm, hafnian
 
-# This script sets up an experiment and calculates the probabilities
-# TODO: parallelize this
-# <<<<<<<<<<<<<<<<<<< Logging  >>>>>>>>>>>>>>>>>>
-time_stamp = datetime.datetime.now().strftime("%d-%m-%Y(%H-%M-%S.%f)")
-dir = r'..\Results\anticoncentration\{}'.format(time_stamp)
-LogUtils.log_config(time_stamp='', dir=dir, filehead='log', module_name='', level=logging.INFO)
 
-logging.info('Benchmark Anticoncentration for two weightings, w1 = 1/sqrt(M), and w2=1. '
-             'Raw data files are saved for each (M,N). Each row is a unitary U drawn from Haar measure. '
-             'Each row consists of 3 values: [lhaf^2 for w1, lhaf^2 for w2, haf^2]. haf^2 doesnt care about w value')
+
+
+
+def Gaussian_lhafs(w, N, var, repeats, func='lhaf', print_bool=False):
+    """
+    Calculates |lhaf(XX^T, w sumX)| or |haf(XX^T)| or |Per(X)| or |Det(X)| for N*N complex Gaussian matrix X from G(0,var)
+    :param w: diagonal weight
+    :param N: Dimension of matrix
+    :param var: Variance of Gaussian matrix
+    :param repeats: Number of repetitions
+    :param func: 'lhaf' or 'haf' or 'perm' or 'det'
+    :param print_bool: whether print time to console
+
+    :return: array of lenght `repeats'
+    """
+
+    raw = np.zeros(repeats, dtype=float)
+    for i in range(repeats):
+        X = np.random.normal(loc=0, scale=np.sqrt(var) / np.sqrt(2), size=(N, N)) + \
+            1j * np.random.normal(loc=0, scale=np.sqrt(var) / np.sqrt(2), size=(N, N))
+
+        t0 = time.time()
+        if func == 'lhaf':
+            loop = (w != 0)
+            B = X @ X.T
+            gamma = w * np.sum(X, axis=1)
+
+            raw_i = np.absolute(hafnian(B + (gamma - B.diagonal()) * np.eye(N), loop=loop))
+
+        elif func == 'haf':
+            B = X @ X.T
+            raw_i = np.absolute(hafnian(B, loop=False))
+
+        elif func == 'perm':
+            raw_i = np.absolute(perm(X))
+
+        elif func == 'det':
+            raw_i = np.absolute(np.linalg.det(X))
+
+        else:
+            raise ValueError('Func not recognized')
+
+        raw[i] = raw_i
+        t1 = time.time()
+        if print_bool:
+            print(f'for {i}-th repeat, {func} = {raw_i} in time={t1 - t0}')
+
+    return raw
+
 
 # <<<<<<<<<<<<<<<<<<< Basic parameters  >>>>>>>>>>>>>>>>>>
-Ns = np.arange(4, 33, step=2)
+func = 'lhaf'
+var = 1  # For now we only care about Gaussian matrices with variance 1. This will involve some rescaling of the matrices.
+if func == 'lhaf':
+    w = 1
+else:
+    w = 0
+Ns = np.arange(6, 32, step=2)
+total_repeats = 100000  # Take some integer multiple of 1000
+print_bool = False
 
-repeat = 1000
+# <<<<<<<<<<<<<<<<<<< Logging  >>>>>>>>>>>>>>>>>>
+time_stamp = datetime.datetime.now().strftime("%d-%m-%Y(%H-%M-%S.%f)")
+if func == 'lhaf':
+    dir = fr'..\Results\anticoncentration_over_X\{func}_w={w}_{time_stamp}'
+    LogUtils.log_config(time_stamp='', dir=dir, filehead='log', module_name='', level=logging.INFO)
+    logging.info(
+        f'Benchmark Anticoncentration for the function |lhaf(XX^T, w(sumX))| for w={w}. '
+        f'The function is calculated for {total_repeats} random complex Gaussian matrices of mean 0 and variance {var}')
+else:
+    dir = fr'..\Results\anticoncentration_over_X\{func}_{time_stamp}'
+    LogUtils.log_config(time_stamp='', dir=dir, filehead='log', module_name='', level=logging.INFO)
+    if func == 'haf':
+        logging.info(
+            f'Benchmark Anticoncentration for the function |haf(XX^T)| '
+            f'The function is calculated for {total_repeats} random complex Gaussian matrices of mean 0 and variance {var}')
+    else:
+        logging.info(
+            f'Benchmark Anticoncentration for the function |{func}(X)| '
+            f'The function is calculated for {total_repeats} random complex Gaussian matrices of mean 0 and variance {var}')
 
-logging.info(f'N takes {Ns}, repeat = {repeat}')
-
-save_U = False
-plotting = False
-if plotting:
-    plot_dir = dir + r'\plots'
-
+# <<<<<<<<<<<<<<<<<<< Calculating  >>>>>>>>>>>>>>>>>>
+# Unable to parallelize this
+# @numba.jit(parallel=True)
+def wrapper_parallel(w, N, var, total_repeats, sub_repeats, save_dir, func='lhaf', print_bool=False):
+    if total_repeats % sub_repeats !=0:
+        raise ValueError('Please make my life easier by making total repeats an integer multiple of sub_repeats')
+    n = total_repeats // sub_repeats
+    # for i in numba.prange(n):
+    for i in range(n):
+        t_i = time.time()
+        raw = Gaussian_lhafs(w, N, var, sub_repeats, func, print_bool)
+        np.save(DFUtils.create_filename(save_dir + rf'\raw_{i}.npy'), raw)
+        t_f = time.time()
+        logging.info(f'Calculate {i}-th batch {sub_repeats} {func}s for N={N}, w={w}, var={var} took time={t_f - t_i}')
 
 for iter, N in enumerate(Ns):
 
-    M = N ** 2  # modes
-
-    # consider two different diagonal weights
-    w1 = 1/np.sqrt(M)
-    w2 = 1.
-
-    logging.info('')
-    logging.info(f'For M={M}, N={N}, w1={w1} and w2={w2}')
-
-    dir_raw = dir + fr'\M={M}_N={N}'
-
-    # Each row is [lhaf^2(w1), lhaf^2(w2), haf^2(w1)]  Note hafnian^2 doesn't care about w value
-    lhaf2s = np.zeros((repeat, 3), dtype=float)
-    # <<<<<<<<<<<<<<<<<<< Calculate bunch of unitaries  >>>>>>>>>>>>>>>>>>
-    time_intial = time.time()
-    for unitary_i in range(repeat):
-
-        U = unitary_group.rvs(M)  # This method returns random unitary matrix sampled from Haar measure
-        if save_U:
-            np.save( DFUtils.create_filename(dir_raw + rf'\U_{unitary_i}.npy'), U)
-
-        t1 = time.time()
-        lhaf2_1 = lhaf_squared(U, w1, N, loop=True)
-        lhaf2_2 = lhaf_squared(U, w2, N, loop=True)
-        haf2 = lhaf_squared(U, w2, N, loop=False)
-        t2 = time.time()
-
-        lhaf2s[unitary_i] = np.asarray([lhaf2_1, lhaf2_2, haf2])
-
-        logging.info(
-            f'{unitary_i}-th rep, lhaf^2(w1)={lhaf2_1:.3}, lhaf^2(w2)={lhaf2_2:.3}, haf^2={haf2:.3}, time is {t2 - t1:.3}')
-
-    time_final = time.time()
-    logging.info(f'N={N}, time to calculate {repeat}*3 lhaf^2 is {time_final - time_intial:.3}')
-
-    np.save(dir_raw + r'_lhaf2_raw.npy', lhaf2s)
-
-    if plotting:
-
-        # Sort the arrays
-        for col in range(lhaf2s.shape[1]):
-            lhaf2s[:, col][::-1].sort()
-
-        repeats = list(range(repeat))
-        plt.figure(f'N={N}_repeat={repeat}_1')
-        plt.plot(repeats, lhaf2s[:,0], label='lhaf^2(w1)')
-        plt.plot(repeats, lhaf2s[:,1], label='lhaf^2(w2)')
-        plt.plot(repeats, lhaf2s[:,2], label='haf^2')
-
-        plt.yscale('log')
-        plt.title(f'M={M},N={N},w1={w1:.2},w2={w2:.2}')
-        plt.xticks([0, repeat])
-        plt.legend()
-        plt.savefig(DFUtils.create_filename(plot_dir + fr'\plot_M={M}_N={N}.png'))
-
+    save_dir = dir + fr'\raw\N={N}_var={var}'
+    wrapper_parallel(w, N, var, total_repeats, 1000, save_dir, func='lhaf', print_bool=False)
 
 
