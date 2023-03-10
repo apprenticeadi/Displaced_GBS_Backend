@@ -12,9 +12,6 @@ from src.utils import LogUtils, DFUtils
 from thewalrus import perm, hafnian
 
 
-
-
-
 def Gaussian_lhafs(w, N, var, repeats, func='lhaf', print_bool=False):
     """
     Calculates |lhaf(XX^T, w sumX)| or |haf(XX^T)| or |Per(X)| or |Det(X)| for N*N complex Gaussian matrix X from G(0,var)
@@ -25,7 +22,7 @@ def Gaussian_lhafs(w, N, var, repeats, func='lhaf', print_bool=False):
     :param func: 'lhaf' or 'haf' or 'perm' or 'det'
     :param print_bool: whether print time to console
 
-    :return: array of lenght `repeats'
+    :return: array of length `repeats'
     """
 
     raw = np.zeros(repeats, dtype=float)
@@ -63,42 +60,47 @@ def Gaussian_lhafs(w, N, var, repeats, func='lhaf', print_bool=False):
 
 
 # <<<<<<<<<<<<<<<<<<< Basic parameters  >>>>>>>>>>>>>>>>>>
-func = 'lhaf'
+# func = 'lhaf'
+# if func == 'lhaf':
+#     w = 1
+# else:
+#     w = 0
 var = 1  # For now we only care about Gaussian matrices with variance 1. This will involve some rescaling of the matrices.
-if func == 'lhaf':
-    w = 1
-else:
-    w = 0
-Ns = np.arange(6, 32, step=2)
+Ns = np.arange(6, 30, step=2)
 total_repeats = 100000  # Take some integer multiple of 1000
 print_bool = False
 
 # <<<<<<<<<<<<<<<<<<< Logging  >>>>>>>>>>>>>>>>>>
 time_stamp = datetime.datetime.now().strftime("%d-%m-%Y(%H-%M-%S.%f)")
-if func == 'lhaf':
-    dir = fr'..\Results\anticoncentration_over_X\{func}_w={w}_{time_stamp}'
-    LogUtils.log_config(time_stamp='', dir=dir, filehead='log', module_name='', level=logging.INFO)
-    logging.info(
-        f'Benchmark Anticoncentration for the function |lhaf(XX^T, w(sumX))| for w={w}. '
-        f'The function is calculated for {total_repeats} random complex Gaussian matrices of mean 0 and variance {var}')
-else:
-    dir = fr'..\Results\anticoncentration_over_X\{func}_{time_stamp}'
-    LogUtils.log_config(time_stamp='', dir=dir, filehead='log', module_name='', level=logging.INFO)
-    if func == 'haf':
-        logging.info(
-            f'Benchmark Anticoncentration for the function |haf(XX^T)| '
-            f'The function is calculated for {total_repeats} random complex Gaussian matrices of mean 0 and variance {var}')
-    else:
-        logging.info(
-            f'Benchmark Anticoncentration for the function |{func}(X)| '
-            f'The function is calculated for {total_repeats} random complex Gaussian matrices of mean 0 and variance {var}')
+
+LogUtils.log_config(time_stamp=time_stamp, filehead='log', module_name='', level=logging.INFO)
+logging.info(
+    f'Benchmark Anticoncentration for different functions over complex Gaussian matrices of mean 0 and variance {var}.'
+    f'Loop Hafnian (and Hafnian) is calculated as |lhaf(XX^T, w(sumX))| for different w (w=0). '
+    f'Permanent and determinant is calculated as |Perm(X)| or |Det(X)|. For each dimension from {Ns}, {total_repeats}'
+    f'random X-s are generated to calculate the function values. The values are then stored as np arrays in different '
+    f'directories marked by timestamp {time_stamp}')
+
 
 # <<<<<<<<<<<<<<<<<<< Calculating  >>>>>>>>>>>>>>>>>>
 # Unable to parallelize this
 # @numba.jit(parallel=True)
-def wrapper_parallel(w, N, var, total_repeats, sub_repeats, save_dir, func='lhaf', print_bool=False):
-    if total_repeats % sub_repeats !=0:
+def wrapper_parallel(N, sub_repeats=1000, func='lhaf', w=0, w_string='0'):
+    if total_repeats % sub_repeats != 0:
         raise ValueError('Please make my life easier by making total repeats an integer multiple of sub_repeats')
+
+    if func == 'lhaf':
+        if w == 0:
+            raise ValueError('You want haf')
+        elif w == 1:
+            w_string = '1'
+        elif w_string=='0':
+            raise ValueError('Give a valid w_string')
+
+        save_dir = fr'..\Results\{func}_w={w_string}_{time_stamp}\N={N}'
+    else:
+        save_dir = fr'..\Results\{func}_{time_stamp}\N={N}'
+
     n = total_repeats // sub_repeats
     # for i in numba.prange(n):
     for i in range(n):
@@ -106,11 +108,12 @@ def wrapper_parallel(w, N, var, total_repeats, sub_repeats, save_dir, func='lhaf
         raw = Gaussian_lhafs(w, N, var, sub_repeats, func, print_bool)
         np.save(DFUtils.create_filename(save_dir + rf'\raw_{i}.npy'), raw)
         t_f = time.time()
-        logging.info(f'Calculate {i}-th batch {sub_repeats} {func}s for N={N}, w={w}, var={var} took time={t_f - t_i}')
+        logging.info(f'Calculate {i}-th batch {sub_repeats} {func}s for N={N}, w={w} took time={t_f - t_i}')
+
 
 for iter, N in enumerate(Ns):
-
-    save_dir = dir + fr'\raw\N={N}_var={var}'
-    wrapper_parallel(w, N, var, total_repeats, 1000, save_dir, func='lhaf', print_bool=False)
-
-
+    wrapper_parallel(N, sub_repeats=1000, func='det')
+    wrapper_parallel(N, sub_repeats=1000, func='lhaf', w=1)
+    wrapper_parallel(N, sub_repeats=1000, func='haf')
+    wrapper_parallel(N, sub_repeats=1000, func='perm')
+    wrapper_parallel(N, sub_repeats=1000, func='lhaf', w=1/N, w_string='1/N')
