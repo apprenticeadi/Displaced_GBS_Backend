@@ -28,7 +28,7 @@ def prefactor(N, func):
 funcs = ['det', 'perm', 'haf', 'lhaf_w=1']
 repeat_i = 1000  #number of data in each raw data file
 repeats=100000
-N = 24
+N = 20
 
 dir_head = fr'..\Results\anticoncentration_over_X\{repeats}repeats'
 func_dirs = os.listdir(dir_head)
@@ -101,7 +101,7 @@ for func in data_dict.keys():  # use refactorised not renormalised data
     prob_density_function[func] = func_pdf
 
     plt.figure('distribution')
-    plt.plot(xs, func_distrib, label=func)
+    plt.plot(xs, func_distrib, '.', label=func)
 
     plt.figure('pdf')
     arg_nonzero = np.where(func_pdf > 0)
@@ -110,7 +110,8 @@ for func in data_dict.keys():  # use refactorised not renormalised data
 plt.figure('distribution')
 plt.title('Probability distribution')
 plt.legend()
-plt.yscale('linear')
+plt.yscale('log')
+plt.xscale('log')
 
 plt.figure('pdf')
 plt.title('Probability density function')
