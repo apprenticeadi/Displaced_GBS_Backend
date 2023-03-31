@@ -42,26 +42,27 @@ for j, n in enumerate(hist_n):
     # plt.text(mean_z*1.1, max_ylim*0.9, f'n=1e{int(np.log10(n))}')
 
     plt.axvline(med_z, color=cycle[j], linestyle='-')
-    plt.text(med_z*1.1, max_ylim*0.9, f'n=1e{int(np.log10(n))}', color=cycle[j])
+    plt.text(med_z*1.1, max_ylim*0.9, f'N=1e{int(np.log10(n))}', color=cycle[j])
 
 plt.xscale('log')
-plt.xlabel('|z|')
+plt.xlabel(r'$|\tilde{X}_{ij}|$')
 plt.ylabel('Frequency')
+min_xlim, max_xlim = plt.xlim()
 plt.legend()
 if save_fig:
     plt.savefig(DFUtils.create_filename(plot_dir + r'\histograms.png'))
 
 
 
-plt.figure('mean value of |Z|')
-plt.plot(stats[:, 0], stats[:, 2], 'x', label='mean(|Z|)')
-plt.plot(medians[:, 0], medians[:, 1], 'x', label='med(|z|)')
-plt.plot(stats[:, 0], stats[:, 1], 'x', label='min(|z|)')
+plt.figure('mean value of |tildeX|')
+plt.plot(stats[:, 0], stats[:, 2], 'x', label=r'mean$(|\tilde{X}_{ij}|)$')
+plt.plot(medians[:, 0], medians[:, 1], 'x', label=r'median($|\tilde{X}_{ij}|$)')
+plt.plot(stats[:, 0], stats[:, 1], 'x', label=r'min($|\tilde{X}_{ij}|$)')
+plt.plot(stats[:, 0], stats[:, 3], 'x', label=r'std($|\tilde{X}_{ij}|$)')
 plt.plot(stats[:, 0], 1 / stats[:, 0], linestyle='--', color='black', label='1/N')
 plt.plot(stats[:, 0], 1 / stats[:, 0] ** 2, linestyle='-', color='black', label='1/N^2')
-plt.plot(stats[:, 0], 1 / stats[:, 0] ** 4, linestyle='-.', color='black', label='1/N^4')
-plt.xlabel('N')
-plt.title('Mean and min of |Z| against N')
+plt.xlabel(r'$N$')
+plt.title(r'Mean and min of $|\tilde{X}_{ij}|$ against $N$')
 # plt.xticks(n_list[::11])
 plt.yscale('log')
 plt.xscale('log')
@@ -70,10 +71,10 @@ if save_fig:
     plt.savefig(DFUtils.create_filename(plot_dir + r'\mean_and_min.png'))
 
 # plot std of |Z|
-plt.figure('std of |Z|')
-plt.plot(stats[:, 0], stats[:, 3], 'x', label='std(|Z|)')
+plt.figure('std of |tildeX|')
+plt.plot(stats[:, 0], stats[:, 3], 'x', label=r'std($|\tilde{X}_{ij}|$)')
 plt.xlabel('N')
-plt.title('Std of |Z| against N')
+plt.title(r'Std of $|\tilde{X}_{ij}|$ against N')
 plt.xscale('log')
 plt.yscale('log')
 plt.plot(stats[:, 0], 1 / stats[:, 0], linestyle='--', color='black', label='1/sqrt(M)')
