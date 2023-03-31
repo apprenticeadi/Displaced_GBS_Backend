@@ -26,7 +26,6 @@ def prefactor(_N, _func):
     else:
         raise ValueError(f'{_func} not recognized')
 
-
 def get_cdf(data_arr, xs):
     """cumulative distribution function"""
     data_arr = np.atleast_2d(data_arr)
@@ -118,7 +117,7 @@ func_labels = {
 # xs_toplot = [1., 0.75, 0.56, 0.42, 0.32, 0.24, 0.18, 0.13]  # for cumulative distribution function
 xs_toplot = [1., 0.42, 0.13]
 
-save_fig = True
+save_fig = False
 plt_dir = fr'..\Plots\acc_numerics'
 
 
@@ -128,95 +127,111 @@ processed_data = read_acc_files(funcs, dir_head, repeats, cdf_density=16)
 # <<<<<<<<<<<<<<<<<<< Plotting  >>>>>>>>>>>>>>>>>>
 for func in funcs:
     refactored_data = processed_data[func]['refactored_data']
+    raw_data = processed_data[func]['raw_data']
     Ns = processed_data[func]['Ns']
 
-    # <<<<<<<<<<<<<<<<<<< Plot distribution of refactored values for each function  >>>>>>>>>>>>>>>>>>
-    plt.figure(f'{func}')
+    # # <<<<<<<<<<<<<<<<<<< Plot distribution of refactored values for each function  >>>>>>>>>>>>>>>>>>
+    # plt.figure(f'{func}')
+    # for j, N in enumerate(Ns):
+    #
+    #     if j % 4 == 0:  # Only plot every 4 of them
+    #         plt.plot(list(range(repeats)), refactored_data[j,:], label=fr'$N={N}$')
+    # x_min, x_max = plt.xlim()
+    # plt.axhline(xs_toplot[0], xmin=x_min, xmax=x_max, color='black', linestyle='-')
+    # plt.axhline(xs_toplot[-1], xmin=x_min, xmax=x_max, color='black', linestyle='--')
+    # plt.text(x_min, xs_toplot[0] * 1.1, fr'$\epsilon={xs_toplot[0]}$')
+    # plt.text(x_min, xs_toplot[-1] * 1.1, fr'$\epsilon={xs_toplot[-1]:.3}$')
+    # plt.ylabel(r'$\epsilon$')
+    # plt.xlabel('trials')
+    # plt.legend()
+    # plt.yscale('log')
+    # plt.xticks([1, repeats])
+    # plt.title(rf'distribution of values for |{func_labels[func]}|')
+    # if save_fig:
+    #     plt.savefig(DFUtils.create_filename(plt_dir + fr'\{func}.png'))
+
+    # <<<<<<<<<<<<<<<<<<< Plot mean of raw values against 1/prefactor  >>>>>>>>>>>>>>>>>
+    plt.figure(f'{func} mean scaling with prefactor')
+    plt.plot(Ns, np.mean(raw_data, axis=1), label='raw data mean')
+    plt.plot(Ns, np.median(raw_data, axis=1), label='raw data median')
+    inv_prefactors = np.zeros_like(Ns, dtype=float)
     for j, N in enumerate(Ns):
-
-        if j % 4 == 0:  # Only plot every 4 of them
-            plt.plot(list(range(repeats)), refactored_data[j,:], label=fr'$N={N}$')
-    x_min, x_max = plt.xlim()
-    plt.axhline(xs_toplot[0], xmin=x_min, xmax=x_max, color='black', linestyle='-')
-    plt.axhline(xs_toplot[-1], xmin=x_min, xmax=x_max, color='black', linestyle='--')
-    plt.text(x_min, xs_toplot[0] * 1.1, fr'$\epsilon={xs_toplot[0]}$')
-    plt.text(x_min, xs_toplot[-1] * 1.1, fr'$\epsilon={xs_toplot[-1]:.3}$')
-    plt.ylabel(r'$\epsilon$')
-    plt.xlabel('trials')
-    plt.legend()
+        inv_prefactors[j] = 1 / prefactor(N, func)
+    plt.plot(Ns, inv_prefactors, label='inverse prefactor')
+    plt.xscale('log')
     plt.yscale('log')
-    plt.xticks([1, repeats])
-    plt.title(rf'distribution of values for |{func_labels[func]}|')
-    if save_fig:
-        plt.savefig(DFUtils.create_filename(plt_dir + fr'\{func}.png'))
-
-    # <<<<<<<<<<<<<<<<<<< For different functions, plot F(N,epsilon) against N for different epsilon >>>>>>>>>>>>>>>>>>
-    plt.figure(fr'{func} $F(N,\epsilon)$')
-
-    cum_distrib = get_cdf(refactored_data, xs_toplot)
-
-    for i, x in enumerate(xs_toplot):
-        plt.plot(Ns, cum_distrib[:, i], label=fr'$\epsilon={x:.3}$')
-
-    plt.legend()
-    plt.xlabel(r'$N$')
-    plt.ylabel(r'$F(N, \epsilon)$')
     plt.xticks(Ns)
-    plt.xscale('linear')
-    plt.ylim(0, 1)
-    plt.title(rf'$F(N,\epsilon)$ for {func_labels[func]}')
-    if save_fig:
-        plt.savefig(plt_dir + fr'\{func} F(N, x) against N.png')
-
-    # <<<<<<<<<<<<<<<<<<< Plot F(N, epsilon) against N for different functions  >>>>>>>>>>>>>>>>>>
-    x_id = -1
-    x_special = xs_toplot[x_id]
-    plt.figure(fr'$F(N, \epsilon={x_special:.3})$ for different functions')
-
-    plt.plot(Ns, 1 - cum_distrib[:, x_id], label=func_labels[func])
-
-plt.figure(fr'$F(N, \epsilon={x_special:.3})$ for different functions')
-plt.xlabel(r'$N$')
-plt.ylabel(r'$1-F(N,\epsilon)$')
-plt.xscale('linear')
-plt.yscale('log')
-plt.legend()
-plt.title(fr'$1 - F(N, \epsilon={x_special})$ for different functions')
-if save_fig:
-    plt.savefig(plt_dir + fr'\F(N, {x_special:.3}) against N.png')
-
-# <<<<<<<<<<<<<<<<<<< Plot F(N, x) against x for different functions  >>>>>>>>>>>>>>>>>>
-N_special = 22
-plt.figure(fr'$F(N={N_special}, x)$ for different functions')
-for func in funcs:
-    N_id = np.argmax(processed_data[func]['Ns']==N_special)
-    plt.plot(processed_data[func]['xs'], processed_data[func]['cdf'][N_id, :], '.', label=func_labels[func])
-plt.xlabel(r'$x$')
-plt.title(fr'$F(N={N_special}, x)$ for different functions')
-plt.xscale('log')
-plt.yscale('log')
-plt.legend()
-if save_fig:
-    plt.savefig(plt_dir + fr'\F({N_special}, x) against x.png')
+    plt.legend()
 
 
-# <<<<<<<<<<<<<<<<<<< Plot 10^5 function values for different functions  >>>>>>>>>>>>>>>>>>
-plt.figure(f'function values for N={N_special}')
-for func in funcs:
-    refactored_data = processed_data[func]['refactored_data']
-    N_id = np.argmax(processed_data[func]['Ns'] == N_special)
-    plt.plot(list(range(repeats)), refactored_data[N_id,:], label=func_labels[func])
 
-x_min, x_max = plt.xlim()
-plt.axhline(xs_toplot[0], xmin=x_min, xmax=x_max, color='black', linestyle='-')
-plt.axhline(xs_toplot[-1], xmin=x_min, xmax=x_max, color='black', linestyle='--')
-plt.text(x_min, xs_toplot[0] * 1.1, fr'$\epsilon={xs_toplot[0]}$')
-plt.text(x_min, xs_toplot[-1] * 1.1, fr'$\epsilon={xs_toplot[-1]:.3}$')
-plt.ylabel(r'$\epsilon$')
-plt.xlabel('trials')
-plt.legend()
-plt.yscale('log')
-plt.xticks([1, repeats])
-plt.title(rf'Distribution of values at N={N_special}')
-if save_fig:
-    plt.savefig(DFUtils.create_filename(plt_dir + fr'\different functions at N={N_special}.png'))
+#     # <<<<<<<<<<<<<<<<<<< For different functions, plot F(N,epsilon) against N for different epsilon >>>>>>>>>>>>>>>>>>
+#     plt.figure(fr'{func} $F(N,\epsilon)$')
+#
+#     cum_distrib = get_cdf(refactored_data, xs_toplot)
+#
+#     for i, x in enumerate(xs_toplot):
+#         plt.plot(Ns, cum_distrib[:, i], label=fr'$\epsilon={x:.3}$')
+#
+#     plt.legend()
+#     plt.xlabel(r'$N$')
+#     plt.ylabel(r'$F(N, \epsilon)$')
+#     plt.xticks(Ns)
+#     plt.xscale('linear')
+#     plt.ylim(0, 1)
+#     plt.title(rf'$F(N,\epsilon)$ for {func_labels[func]}')
+#     if save_fig:
+#         plt.savefig(plt_dir + fr'\{func} F(N, x) against N.png')
+#
+#     # <<<<<<<<<<<<<<<<<<< Plot F(N, epsilon) against N for different functions  >>>>>>>>>>>>>>>>>>
+#     x_id = -1
+#     x_special = xs_toplot[x_id]
+#     plt.figure(fr'$F(N, \epsilon={x_special:.3})$ for different functions')
+#
+#     plt.plot(Ns, 1 - cum_distrib[:, x_id], label=func_labels[func])
+#
+# plt.figure(fr'$F(N, \epsilon={x_special:.3})$ for different functions')
+# plt.xlabel(r'$N$')
+# plt.ylabel(r'$1-F(N,\epsilon)$')
+# plt.xscale('linear')
+# plt.yscale('log')
+# plt.legend()
+# plt.title(fr'$1 - F(N, \epsilon={x_special})$ for different functions')
+# if save_fig:
+#     plt.savefig(plt_dir + fr'\F(N, {x_special:.3}) against N.png')
+#
+# # <<<<<<<<<<<<<<<<<<< Plot F(N, x) against x for different functions  >>>>>>>>>>>>>>>>>>
+# N_special = 22
+# plt.figure(fr'$F(N={N_special}, x)$ for different functions')
+# for func in funcs:
+#     N_id = np.argmax(processed_data[func]['Ns']==N_special)
+#     plt.plot(processed_data[func]['xs'], processed_data[func]['cdf'][N_id, :], '.', label=func_labels[func])
+# plt.xlabel(r'$x$')
+# plt.title(fr'$F(N={N_special}, x)$ for different functions')
+# plt.xscale('log')
+# plt.yscale('log')
+# plt.legend()
+# if save_fig:
+#     plt.savefig(plt_dir + fr'\F({N_special}, x) against x.png')
+#
+#
+# # <<<<<<<<<<<<<<<<<<< Plot 10^5 function values for different functions  >>>>>>>>>>>>>>>>>>
+# plt.figure(f'function values for N={N_special}')
+# for func in funcs:
+#     refactored_data = processed_data[func]['refactored_data']
+#     N_id = np.argmax(processed_data[func]['Ns'] == N_special)
+#     plt.plot(list(range(repeats)), refactored_data[N_id,:], label=func_labels[func])
+#
+# x_min, x_max = plt.xlim()
+# plt.axhline(xs_toplot[0], xmin=x_min, xmax=x_max, color='black', linestyle='-')
+# plt.axhline(xs_toplot[-1], xmin=x_min, xmax=x_max, color='black', linestyle='--')
+# plt.text(x_min, xs_toplot[0] * 1.1, fr'$\epsilon={xs_toplot[0]}$')
+# plt.text(x_min, xs_toplot[-1] * 1.1, fr'$\epsilon={xs_toplot[-1]:.3}$')
+# plt.ylabel(r'$\epsilon$')
+# plt.xlabel('trials')
+# plt.legend()
+# plt.yscale('log')
+# plt.xticks([1, repeats])
+# plt.title(rf'Distribution of values at N={N_special}')
+# if save_fig:
+#     plt.savefig(DFUtils.create_filename(plt_dir + fr'\different functions at N={N_special}.png'))
