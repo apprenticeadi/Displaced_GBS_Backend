@@ -23,7 +23,8 @@ def prefactor(_N, _func):
             w = 1 / _N
         else:
             w = float(_func[_func.index('w') + 2:])
-        return np.sqrt(np.power(2., float(_N)) / factorial(_N) / big_F(w, _N, _N)[_N])
+        # return np.sqrt(np.power(2., float(_N)) / factorial(_N) / big_F(w, _N, _N)[_N])
+        return np.sqrt( np.power(2., float(_N)) * comb(_N**2, _N) / big_F(w, _N, _N)[_N] / np.power(float(_N), 2*float(_N)) )
 
     else:
         raise ValueError(f'{_func} not recognized')
@@ -89,8 +90,9 @@ def read_acc_files(funcs, dir_head, repeats, cdf_density=16):
         x_min = np.min(refactored_data_arr)
         x_min_log = np.floor(np.log10(x_min))
         x_max_log = 0
-        xs = np.logspace(start=x_min_log, stop=10 ** x_max_log,
-                         num=cdf_density * int(x_max_log - x_min_log))  # evenly distributed in log scale, 16 per decade
+
+        xs = np.logspace(start=x_min_log, stop=x_max_log, num=cdf_density * int(x_max_log - x_min_log), base=10 )  # evenly distributed in log scale, 16 per decade
+
 
         cum_distrib_arr = get_cdf(refactored_data_arr, xs)
 
@@ -153,7 +155,9 @@ for func in funcs:
     for j, N in enumerate(Ns):
 
         if j % 4 == 0:  # Only plot every 4 of them
+
             plt.plot(list(range(repeats)), refactored_data[j, :], label=fr'$N={N}$')
+
     x_min, x_max = plt.xlim()
     plt.axhline(xs_toplot[0], xmin=x_min, xmax=x_max, color='black', linestyle='-')
     plt.axhline(xs_toplot[-1], xmin=x_min, xmax=x_max, color='black', linestyle='--')
@@ -165,6 +169,7 @@ for func in funcs:
     plt.yscale('log')
     plt.xticks([1, repeats])
     plt.title(rf'distribution of values for |{func_labels(func)}|')
+
     if save_fig:
         plt.savefig(DFUtils.create_filename(plt_dir + fr'\{func}.png'))
 
@@ -178,7 +183,6 @@ for func in funcs:
     plt.plot(Ns, inv_prefactors, label='inverse prefactor')
     plt.xscale('log')
     plt.yscale('log')
-    # plt.xticks([Ns[0], Ns[-1]])
     plt.legend()
     plt.xlabel(r'$N$')
     if save_fig:
@@ -202,6 +206,7 @@ for func in funcs:
     if save_fig:
         plt.savefig(DFUtils.create_filename(plt_dir + fr'\{func} F(N, x) against N.png'))
 
+
     # <<<<<<<<<<<<<<<<<<< Plot F(N, epsilon) against N for different functions  >>>>>>>>>>>>>>>>>>
     x_id = -1
     x_special = xs_toplot[x_id]
@@ -216,6 +221,7 @@ plt.xscale('linear')
 plt.yscale('log')
 plt.legend()
 plt.title(fr'$1 - F(N, \alpha={x_special})$ for different functions')
+
 if save_fig:
     plt.savefig(plt_dir + fr'\F(N, {x_special:.3}) against N.png')
 
@@ -225,6 +231,7 @@ plt.figure(fr'$F(N={N_special}, x)$ for different functions')
 for func in funcs:
     N_id = np.argmax(processed_data[func]['Ns'] == N_special)
     plt.plot(processed_data[func]['xs'], processed_data[func]['cdf'][N_id, :], '.', label=func_labels(func))
+
 plt.xlabel(r'$x$')
 plt.title(fr'$F(N={N_special}, x)$ for different functions')
 plt.xscale('log')
@@ -253,3 +260,4 @@ plt.xticks([1, repeats])
 plt.title(rf'Distribution of values at N={N_special}')
 if save_fig:
     plt.savefig(DFUtils.create_filename(plt_dir + fr'\different functions at N={N_special}.png'))
+

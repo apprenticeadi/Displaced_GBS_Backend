@@ -60,14 +60,15 @@ def Gaussian_lhafs(w, N, var, repeats, func='lhaf', print_bool=False):
 
 
 @numba.njit(parallel=True)
-def Gaussian_dets(N, var, repeats, func='det'):
+def Gaussian_dets(N, var, repeats, func='det', w=1):
     """
-    Calculates |Det(X)| for N*N complex Gaussian matrix X from G(0,var). This can be parallelized.
+    Calculates |Det(X)| for N*N complex Gaussian matrix X from G(0,var). Optional diagonal weight w.
+    This can be parallelized.
     :param N: Dimension of matrix
     :param var: Variance of Gaussian matrix
     :param repeats: Number of repetitions
     :param func: 'det'
-    :param print_bool: whether print time to console
+    :param w: diagonal weight
 
     :return: array of length `repeats'
     """
@@ -76,6 +77,8 @@ def Gaussian_dets(N, var, repeats, func='det'):
     for i in numba.prange(repeats):
         X = np.random.normal(loc=0, scale=np.sqrt(var) / np.sqrt(2), size=(N, N)) + \
             1j * np.random.normal(loc=0, scale=np.sqrt(var) / np.sqrt(2), size=(N, N))
+
+        np.fill_diagonal(X, w * np.diagonal(X))
 
         if func == 'det':
             raw_i = np.absolute(np.linalg.det(X))
@@ -124,14 +127,17 @@ def wrapper(N, sub_repeats=1000, func='lhaf', w=0., w_string='0'):
 
         save_dir = dir_head + fr'\{func}_w={w_string}_{time_stamp}\N={N}'
     else:
-        save_dir = dir_head + fr'\{func}_{time_stamp}\N={N}'
+        if w == 0:
+            raise Warning('You are setting a zero-diagonal')
+
+        save_dir = dir_head + fr'\{func}_w={w_string}_{time_stamp}\N={N}'
 
     n = total_repeats // sub_repeats
 
     for i in range(n):
         t_i = time.time()
         if func == 'det':
-            raw = Gaussian_dets(N, var, sub_repeats, func)
+            raw = Gaussian_dets(N, var, sub_repeats, func=func, w=w)
         else:
             raw = Gaussian_lhafs(w, N, var, sub_repeats, func, print_bool)
         np.save(DFUtils.create_filename(save_dir + rf'\raw_{i}.npy'), raw)
@@ -139,6 +145,9 @@ def wrapper(N, sub_repeats=1000, func='lhaf', w=0., w_string='0'):
         logging.info(f'Calculate {i}-th batch {sub_repeats} {func}s for N={N}, w={float(w):.3} took time={t_f - t_i}')
 
 
+#TODO: think more on this, because we don't know the prefactor for a diagonally weighted determinant...
+for N in Ns:
+    wrapper(N, sub_repeats=1000, func='det', w=0.1, w_string='0.1')
 # for N in Ns:
 #     wrapper(N, sub_repeats=1000, func='det')
 for N in Ns:
@@ -146,8 +155,8 @@ for N in Ns:
 for N in Ns:
     wrapper(N, sub_repeats=1000, func='lhaf', w=0.1, w_string='0.1')
 # for N in Ns:
-#     wrapper_parallel(N, sub_repeats=1000, func='haf')
+#     wrapper_parallel(N, sub_repeats=1000, func='haf', w=0, w_string='0')
 # for N in Ns:
-#     wrapper_parallel(N, sub_repeats=1000, func='perm')
+#     wrapper_parallel(N, sub_repeats=1000, func='perm', w=1, w_string='1')
 # for N in Ns:
 #     wrapper_parallel(N, sub_repeats=1000, func='lhaf', w=1/N, w_string='N^-1')
