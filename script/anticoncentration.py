@@ -92,7 +92,7 @@ def Gaussian_dets(N, var, repeats, func='det'):
 # else:
 #     w = 0
 var = 1  # For now we only care about Gaussian matrices with variance 1. This will involve some rescaling of the matrices.
-Ns = np.arange(30, 50, step=1)
+Ns = np.arange(6, 30, step=2)
 total_repeats = 100000 # Take some integer multiple of 1000
 print_bool = False
 
@@ -110,14 +110,14 @@ logging.info(
 
 # <<<<<<<<<<<<<<<<<<< Calculating  >>>>>>>>>>>>>>>>>>
 # Unable to parallelize this for loop Hafnian and permanent
-def wrapper(N, sub_repeats=1000, func='lhaf', w=0, w_string='0'):
+def wrapper(N, sub_repeats=1000, func='lhaf', w=0., w_string='0'):
     if total_repeats % sub_repeats != 0:
         raise ValueError('Please make my life easier by making total repeats an integer multiple of sub_repeats')
 
     if func == 'lhaf':
-        if w == 0:
+        if w == 0.:
             raise ValueError('You want haf')
-        elif w == 1:
+        elif w == 1.:
             w_string = '1'
         elif w_string=='0':
             raise ValueError('Give a valid w_string')
@@ -139,10 +139,12 @@ def wrapper(N, sub_repeats=1000, func='lhaf', w=0, w_string='0'):
         logging.info(f'Calculate {i}-th batch {sub_repeats} {func}s for N={N}, w={float(w):.3} took time={t_f - t_i}')
 
 
-for N in Ns:
-    wrapper(N, sub_repeats=1000, func='det')
 # for N in Ns:
-#     wrapper_parallel(N, sub_repeats=1000, func='lhaf', w=1)
+#     wrapper(N, sub_repeats=1000, func='det')
+for N in Ns:
+    wrapper(N, sub_repeats=1000, func='lhaf', w=5, w_string='5')
+for N in Ns:
+    wrapper(N, sub_repeats=1000, func='lhaf', w=10, w_string='10')
 # for N in Ns:
 #     wrapper_parallel(N, sub_repeats=1000, func='haf')
 # for N in Ns:
