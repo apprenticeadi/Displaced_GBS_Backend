@@ -4,10 +4,10 @@ from src.utils import DFUtils
 import math
 
 
-time_stamp = r'\M=9-20_d=2_14-02-2023(18-03-12.659150)'
+time_stamp = r'\M=9-20_d=4_14-02-2023(18-37-55.542945)'
 
 Ms = np.arange(9, 21)
-depth = 2
+depth = 4
 dir = r'..\Results\bounded_anticoncentration' + time_stamp
 savefig = True
 if savefig:
