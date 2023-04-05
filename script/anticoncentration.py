@@ -92,8 +92,8 @@ def Gaussian_dets(N, var, repeats, func='det'):
 # else:
 #     w = 0
 var = 1  # For now we only care about Gaussian matrices with variance 1. This will involve some rescaling of the matrices.
-Ns = np.arange(6, 30, step=2)
-total_repeats = 100000 # Take some integer multiple of 1000
+Ns = np.arange(30, 36, step=2)
+total_repeats = 5000
 print_bool = False
 
 # <<<<<<<<<<<<<<<<<<< Logging  >>>>>>>>>>>>>>>>>>
@@ -142,9 +142,9 @@ def wrapper(N, sub_repeats=1000, func='lhaf', w=0., w_string='0'):
 # for N in Ns:
 #     wrapper(N, sub_repeats=1000, func='det')
 for N in Ns:
-    wrapper(N, sub_repeats=1000, func='lhaf', w=5, w_string='5')
+    wrapper(N, sub_repeats=1000, func='lhaf', w=1, w_string='1')
 for N in Ns:
-    wrapper(N, sub_repeats=1000, func='lhaf', w=10, w_string='10')
+    wrapper(N, sub_repeats=1000, func='lhaf', w=0.1, w_string='0.1')
 # for N in Ns:
 #     wrapper_parallel(N, sub_repeats=1000, func='haf')
 # for N in Ns:
