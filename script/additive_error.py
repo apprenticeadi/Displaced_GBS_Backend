@@ -1,10 +1,14 @@
 import numpy as np
+import matplotlib
 import matplotlib.pyplot as plt
 from scipy.special import comb, factorial
 from src.photon_number_distributions import big_F
 
+# matplotlib.rc('xtick', labelsize=18)
+# plt.rcParams.update({'xtick': 18})
+
 Ns = np.arange(start=2, stop=51, dtype=float)
-w_labels = ['N^-1', '1', '2', '5', '10', 'N^1']
+w_labels = ['0', '0.1', '1', '10', 'N^0.5', 'N^1']
 
 bigFs = np.zeros((len(Ns), len(w_labels)))
 for i_N, N in enumerate(Ns):
@@ -31,7 +35,16 @@ plt.figure('additive error')
 for i in range(len(w_labels)):
     bigFs_i = bigFs[:,i]
     error = bigFs_i * factorial(Ns) / np.power(2*Ns**2, Ns)
-    plt.plot(Ns, error, label=f'w={w_labels[i]}')
+    if w_labels[i]=='0':
+        plt.plot(Ns, error, 'x', label=f'$w=${w_labels[i]}')
+    elif w_labels[i][0]=='N':
+        k = float(w_labels[i][2:])
+        if k == 0.5:
+            plt.plot(Ns, error, label=r'$w=\sqrt{N}$')
+        elif k == 1:
+            plt.plot(Ns, error, label=r'$w=N$')
+    else:
+        plt.plot(Ns, error, label=f'$w=${w_labels[i]}')
 plt.yscale('log')
 plt.legend()
 plt.xlabel(r'$N$')
