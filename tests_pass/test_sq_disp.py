@@ -7,12 +7,16 @@ from src.utils import MatrixUtils
 # <<<<<<<<<<<<<<<<<<< Size  >>>>>>>>>>>>>>>>>>
 M = 100
 N = int(np.floor(np.sqrt(M)))
+K = N
 w = 1   # The diagonal weight.
 
 U = unitary_group.rvs(M)
+id_K = np.zeros(M)
+id_K[:K] = 1.
+id_K = np.diag(id_K)
 
-B = U @ U.T  # The tanhr term is absorbed inside w
-half_gamma = w * np.sum(U, axis=1)
+B = U @ id_K @ U.T  # The tanhr term is absorbed inside w
+half_gamma = w * np.sum(U[:, :K], axis=1)
 x = B / np.outer(half_gamma, half_gamma)
 x = MatrixUtils.filldiag(x, np.zeros(M))  # We don't want x_ii
 masked_x = x[
@@ -23,7 +27,7 @@ sum_x = np.sum(abs_x, axis=1)
 
 axis_lim = 1e3
 
-plt.figure(f'Plot of |x| for M={M}, w={w}')
+plt.figure(r'Plot of $|\tilde\{X\}_ij|$' + f'for M={M}, w={w}')
 plt.axhline(y=0, xmin=-axis_lim, xmax=axis_lim, color='black')
 plt.axvline(x=0, ymin=-axis_lim, ymax=axis_lim, color='black')
 circle1 = plt.Circle((0,0), 1, color='r', alpha=0.5, label='Radius 1')
@@ -38,7 +42,7 @@ plt.ylim(bottom=-axis_lim, top=axis_lim)
 plt.yscale('symlog', linthresh = 10**np.floor(np.log10(1/N**4)))
 plt.xscale('symlog', linthresh = 10**np.floor(np.log10(1/N**4)))
 plt.legend()
-plt.title(f'Scatter plot of x_ij for M={M}, w={w}')
+plt.title(r'Scatter plot of $\tilde{X}_{ij}$' + f'for M={M}, w={w}')
 
 plt.figure(f'Plot of sum |x| for M={M}, w={w}')
 plt.axhline(y=0, xmin=-axis_lim, xmax=axis_lim, color='black')
@@ -53,19 +57,19 @@ plt.ylim(bottom=-axis_lim, top=axis_lim)
 plt.yscale('symlog', linthresh = 10**np.floor(np.log10(1/N)))
 plt.xscale('symlog', linthresh = 10**np.floor(np.log10(1/N)))
 plt.legend()
-plt.title(f'Scatter plot of sum x_ij for M={M}, w={w}')
+plt.title(r'Scatter plot of  $\sum_{col} \tilde{X}_{ij}$' + f'for M={M}, w={w}')
 
 
 
 def func(r):
-    if np.sinh(r) ** 2 >= 1 / np.sqrt(M) or r <= 0:
+    if np.sinh(r) ** 2 >= 1  or r <= 0:
         return 100000
     else:
-        return np.sqrt(1 / np.sqrt(M) - np.sinh(r)**2) * (1 - np.tanh(r)) / np.sqrt(np.tanh(r)) - w
+        return np.sqrt(1 - np.sinh(r)**2) * (1 - np.tanh(r)) / np.sqrt(np.tanh(r)) - w
 
 root = fsolve(func, np.arcsinh(np.sqrt( 0.1 / np.sqrt(M))))
 r = root[0]
-beta = np.sqrt(1 / np.sqrt(M) - np.sinh(r)**2)
+beta = np.sqrt(1 - np.sinh(r)**2)
 
 print(f'r={r}')
 print(f'beta={beta}')
