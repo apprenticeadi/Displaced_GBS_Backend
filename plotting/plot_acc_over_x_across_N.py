@@ -224,6 +224,8 @@ plt.ylabel(fr'$1-F(N,\alpha={x_special:.3})$')
 plt.xscale('linear')
 plt.xlim([0, 55])
 plt.yscale('log')
+plt.figure(fr'$F(N, \alpha={x_special:.3})$ for different functions').set_figwidth(8)
+plt.figure(fr'$F(N, \alpha={x_special:.3})$ for different functions').set_figheight(5)
 # plt.legend()
 # plt.title(fr'$1 - F(N, \alpha={x_special})$ for different functions')
 
