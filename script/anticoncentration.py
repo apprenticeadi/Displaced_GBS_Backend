@@ -60,7 +60,7 @@ def Gaussian_lhafs(w, N, var, repeats, func='lhaf', print_bool=False):
 
 
 @numba.njit(parallel=True)
-def Gaussian_dets(N, var, repeats, func='det', w=1):
+def Gaussian_dets(N, var, repeats, func='det', w=1.):
     """
     Calculates |Det(X)| for N*N complex Gaussian matrix X from G(0,var). Optional diagonal weight w.
     This can be parallelized.
@@ -95,33 +95,29 @@ def Gaussian_dets(N, var, repeats, func='det', w=1):
 # else:
 #     w = 0
 var = 1  # For now we only care about Gaussian matrices with variance 1. This will involve some rescaling of the matrices.
-Ns = np.arange(30, 36, step=2)
-total_repeats = 5000
 print_bool = False
 
 # <<<<<<<<<<<<<<<<<<< Logging  >>>>>>>>>>>>>>>>>>
 time_stamp = datetime.datetime.now().strftime("%d-%m-%Y(%H-%M-%S.%f)")
-dir_head = fr'..\Results\anticoncentration_over_X\{total_repeats}repeats'
 LogUtils.log_config(time_stamp=time_stamp, filehead='anticoncentration_over_X', module_name='', level=logging.INFO)
 logging.info(
     f'Benchmark Anticoncentration for different functions over complex Gaussian matrices of mean 0 and variance {var}.'
     f'Loop Hafnian (and Hafnian) is calculated as |lhaf(XX^T, w(sumX))| for different w (w=0). '
-    f'Permanent and determinant is calculated as |Perm(X)| or |Det(X)|. For each dimension from {Ns}, {total_repeats}'
-    f'random X-s are generated to calculate the function values. The values are then stored as np arrays in different '
-    f'directories marked by timestamp {time_stamp}')
+    f'Permanent and determinant is calculated as |Perm(X)| or |Det(X)|. The values are then stored as np arrays in '
+    f'different directories marked by timestamp {time_stamp}')
 
 
 # <<<<<<<<<<<<<<<<<<< Calculating  >>>>>>>>>>>>>>>>>>
 # Unable to parallelize this for loop Hafnian and permanent
-def wrapper(N, sub_repeats=1000, func='lhaf', w=0., w_string='0'):
+def wrapper(N, total_repeats, sub_repeats, func='lhaf', w=0., w_string='0'):
+    dir_head = fr'..\Results\anticoncentration_over_X\{total_repeats}repeats'
+
     if total_repeats % sub_repeats != 0:
         raise ValueError('Please make my life easier by making total repeats an integer multiple of sub_repeats')
 
     if func == 'lhaf':
         if w == 0.:
             raise ValueError('You want haf')
-        elif w == 1.:
-            w_string = '1'
         elif w_string=='0':
             raise ValueError('Give a valid w_string')
 
@@ -145,18 +141,14 @@ def wrapper(N, sub_repeats=1000, func='lhaf', w=0., w_string='0'):
         logging.info(f'Calculate {i}-th batch {sub_repeats} {func}s for N={N}, w={float(w):.3} took time={t_f - t_i}')
 
 
-#TODO: think more on this, because we don't know the prefactor for a diagonally weighted determinant...
-for N in Ns:
-    wrapper(N, sub_repeats=1000, func='det', w=0.1, w_string='0.1')
+for N in np.arange(6, 30, step=2):
+    wrapper(N, total_repeats=100000, sub_repeats=1000, func='lhaf', w=N**0.25, w_string='N^0.25')
+for N in np.arange(30, 36, step=2):
+    wrapper(N, total_repeats=10000, sub_repeats=1000, func='lhaf', w=N**0.25, w_string='N^0.25')
+for N in np.arange(30, 36, step=2):
+    wrapper(N, total_repeats=5000, sub_repeats=1000, func='lhaf', w=1., w_string='1')
 # for N in Ns:
 #     wrapper(N, sub_repeats=1000, func='det')
-for N in Ns:
-    wrapper(N, sub_repeats=1000, func='lhaf', w=1, w_string='1')
-for N in Ns:
-    wrapper(N, sub_repeats=1000, func='lhaf', w=0.1, w_string='0.1')
 # for N in Ns:
-#     wrapper_parallel(N, sub_repeats=1000, func='haf', w=0, w_string='0')
-# for N in Ns:
-#     wrapper_parallel(N, sub_repeats=1000, func='perm', w=1, w_string='1')
-# for N in Ns:
-#     wrapper_parallel(N, sub_repeats=1000, func='lhaf', w=1/N, w_string='N^-1')
+#     wrapper(N, sub_repeats=1000, func='lhaf', w=0.1, w_string='0.1')
+
