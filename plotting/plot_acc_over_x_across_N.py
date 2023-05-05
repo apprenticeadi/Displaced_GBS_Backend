@@ -19,8 +19,9 @@ def prefactor(_N, _func):
             return 0
 
     elif _func[:4] == 'lhaf':
-        if _func[_func.index('w') + 2:] == "N^-1":  # currently only recognizes 1/N
-            w = 1 / _N
+        if _func[_func.index('w') + 2 : _func.index('w') + 4] == "N^":
+            exponent_on_N = float(_func[_func.index('w') + 4:])
+            w = _N ** exponent_on_N
         else:
             w = float(_func[_func.index('w') + 2:])
         # return np.sqrt(np.power(2., float(_N)) / factorial(_N) / big_F(w, _N, _N)[_N])
@@ -42,8 +43,71 @@ def get_cdf(data_arr, xs):
 
     return cdf
 
+def raw_acc_data(func, repeats):
+    dir_head = fr'..\Results\anticoncentration_over_X\{repeats}repeats'
+    all_func_dirs = os.listdir(dir_head)
 
-def read_acc_files(funcs, dir_head, repeats, cdf_density=16):
+    _func_dirs = [file_ for file_ in all_func_dirs if
+                  file_.startswith(func + '_')]  # add '_' otherwise w=10 and w=1 get mixed up
+
+    if len(_func_dirs) == 0:
+        return {}  # Don't return exception, but empty dictionary. This way, in multi-rep function, we merely update the dictionary with an empty dictionary.
+
+    raw_data = {}
+    for _func_dir in _func_dirs:
+        for N_str in os.listdir(dir_head + fr'\{_func_dir}'):
+            N = int(N_str[2:])
+
+            if N in raw_data.keys():
+                continue
+
+            # TODO: fix this. this is a temporary solution for a half-run permanent calculation
+            if func == 'perm' and N == 26:
+                continue
+
+            N_dir = dir_head + fr'\{_func_dir}\{N_str}'
+            raw_data_files = os.listdir(N_dir)
+
+            combined_raw_data = np.zeros((len(raw_data_files), repeats // len(raw_data_files)), dtype=float)
+            for i, fn in enumerate(raw_data_files):
+                combined_raw_data[i, :] = np.load(N_dir + fr'\{fn}')
+            combined_raw_data = combined_raw_data.flatten()
+            combined_raw_data.sort()
+
+            raw_data[N] = combined_raw_data
+
+    return raw_data
+
+def refactor_data(func, raw_data):
+
+    refactored_data={}
+    for N in raw_data.keys():
+        refactored_data[N] = prefactor(N, func) * raw_data[N]
+
+    return refactored_data
+
+def multirep_raw_acc_data(func, repeats_list):
+    repeats_list.sort()  # if there are datafiles for the same N in two repeats, we want the higher repeat to overwrite the lower repeat
+
+    multi_rep_data = {}
+    for repeats in repeats_list:
+        raw_data = raw_acc_data(func, repeats)
+
+        multi_rep_data.update(raw_data)
+
+    return multi_rep_data
+
+def read_raw_acc_files(funcs, repeats_list):
+
+    multi_func_data = {}
+    for func in funcs:
+        multi_func_data[func] = multirep_raw_acc_data(func, repeats_list)
+
+    return multi_func_data
+
+# Don't use this
+def process_acc_files(funcs, repeats, cdf_density=16):
+    dir_head = fr'..\Results\anticoncentration_over_X\{repeats}repeats'
     all_func_dirs = os.listdir(dir_head)
 
     processed_data = {}
@@ -106,7 +170,6 @@ def read_acc_files(funcs, dir_head, repeats, cdf_density=16):
 
     return processed_data
 
-
 def func_labels(func_string):
     if func_string == 'det':
         return 'Det'
@@ -115,8 +178,12 @@ def func_labels(func_string):
     elif func_string == 'haf':
         return 'Haf'
     elif func_string[:4] == 'lhaf':
+
+        # I don't know how to use formatting within latex labels
         if func_string[func_string.index('w') + 2:] == 'N^-1':
             return r'lHaf$(w=\frac{1}{N})$'
+        elif func_string[func_string.index('w') + 2:] == 'N^0.25':
+            return r'lHaf$(w=N^{1/4})$'
         else:
             w_value = func_string[func_string.index('w') + 2:]
             return fr'lHaf$(w={w_value})$'
@@ -125,41 +192,45 @@ def func_labels(func_string):
 
 
 # <<<<<<<<<<<<<<<<<<< Basic parameters  >>>>>>>>>>>>>>>>>>
-repeats = 100000
-# repeats = 5000
-
-dir_head = fr'..\Results\anticoncentration_over_X\{repeats}repeats'
+repeats_list = [10000, 100000]
 
 # funcs = ['perm', 'det', 'haf', 'lhaf_w=N^-1', 'lhaf_w=0.1', 'lhaf_w=0.01', 'lhaf_w=1']
-funcs = ['perm', 'det', 'haf', 'lhaf_w=0.1', 'lhaf_w=1']
-# funcs = ['lhaf_w=1', 'lhaf_w=0.1']
-
+funcs = ['perm', 'det', 'haf', 'lhaf_w=0.1', 'lhaf_w=1', 'lhaf_w=N^0.25']
+# funcs = ['lhaf_w=1', 'lhaf_w=N^0.25']
 
 # xs_toplot = [1., 0.75, 0.56, 0.42, 0.32, 0.24, 0.18, 0.13]  # for cumulative distribution function
 xs_toplot = [1., 0.42, 0.13]
 
-save_fig = False
+save_fig = True
 time_stamp = datetime.datetime.now().strftime("%d-%m-%Y(%H-%M-%S.%f)")
 plt_dir = fr'..\Plots\acc_numerics\{time_stamp}'
 
 # <<<<<<<<<<<<<<<<<<< Read data  >>>>>>>>>>>>>>>>>>
-processed_data = read_acc_files(funcs, dir_head, repeats, cdf_density=16)
+multi_func_raw_data = read_raw_acc_files(funcs, repeats_list)
 
 # <<<<<<<<<<<<<<<<<<< Plotting  >>>>>>>>>>>>>>>>>>
 plt.rcParams.update({'font.size':14})
 cycle = plt.rcParams['axes.prop_cycle'].by_key()['color']
 for i_func, func in enumerate(funcs):
-    refactored_data = processed_data[func]['refactored_data']
-    raw_data = processed_data[func]['raw_data']
-    Ns = processed_data[func]['Ns']
+    raw_data = multi_func_raw_data[func]
+    Ns = list(raw_data.keys())
+    Ns.sort()
+    refactored_data = refactor_data(func, raw_data)
 
+    cum_distrib = np.zeros((len(Ns), len(xs_toplot)), dtype=float)
+    for i_N, N in enumerate(Ns):
+        refactored_data_arr = refactored_data[N]
+        for i_x, x in enumerate(xs_toplot):
+            cum_distrib[i_N, i_x] = np.argmax( refactored_data_arr > x) / len(refactored_data_arr)
+
+    #
     # # <<<<<<<<<<<<<<<<<<< Plot distribution of refactored values for each function  >>>>>>>>>>>>>>>>>>
     # plt.figure(f'{func}')
     # for j, N in enumerate(Ns):
     #
     #     if j % 4 == 0:  # Only plot every 4 of them
     #
-    #         plt.plot(list(range(repeats)), refactored_data[j, :], label=fr'$N={N}$')
+    #         plt.plot(refactored_data[N], label=fr'$N={N}$')
     #
     # x_min, x_max = plt.xlim()
     # plt.axhline(xs_toplot[0], xmin=x_min, xmax=x_max, color='black', linestyle='-')
@@ -170,17 +241,22 @@ for i_func, func in enumerate(funcs):
     # plt.xlabel('trials')
     # plt.legend()
     # plt.yscale('log')
-    # plt.xticks([1, repeats])
+    # # plt.xticks([1, repeats])
     # plt.title(rf'distribution of values for |{func_labels(func)}|')
     #
     # if save_fig:
     #     plt.savefig(DFUtils.create_filename(plt_dir + fr'\{func}.png'))
-    #
+
     # # <<<<<<<<<<<<<<<<<<< Plot mean of raw values against 1/prefactor  >>>>>>>>>>>>>>>>>
     # plt.figure(f'{func} mean scaling with prefactor')
-    # plt.plot(Ns, np.mean(raw_data, axis=1), label='raw data mean')
-    # plt.plot(Ns, np.median(raw_data, axis=1), label='raw data median')
+    #
+    # mean_raw = [np.mean(raw_data[N_i]) for N_i in Ns]
+    # median_raw = [np.median(raw_data[N_i]) for N_i in Ns]
+    #
+    # plt.plot(Ns, mean_raw, label='raw data mean')
+    # plt.plot(Ns, median_raw, label='raw data median')
     # inv_prefactors = np.zeros_like(Ns, dtype=float)
+    #
     # for j, N in enumerate(Ns):
     #     inv_prefactors[j] = 1 / prefactor(N, func)
     # plt.plot(Ns, inv_prefactors, label='inverse prefactor')
@@ -190,12 +266,10 @@ for i_func, func in enumerate(funcs):
     # plt.xlabel(r'$N$')
     # if save_fig:
     #     plt.savefig(DFUtils.create_filename(plt_dir + fr'\{func} mean and prefactor scaling against N.png'))
-    #
+
     # # <<<<<<<<<<<<<<<<<<< For different functions, plot F(N,epsilon) against N for different epsilon >>>>>>>>>>>>>>>>>>
     # plt.figure(fr'{func} $F(N,\epsilon)$')
-
-    cum_distrib = get_cdf(refactored_data, xs_toplot)
-
+    #
     # for i, x in enumerate(xs_toplot):
     #     plt.plot(Ns, cum_distrib[:, i], label=fr'$\epsilon={x:.3}$')
     #
@@ -215,14 +289,14 @@ for i_func, func in enumerate(funcs):
     x_special = xs_toplot[x_id]
     plt.figure(fr'$F(N, \alpha={x_special:.3})$ for different functions')
 
-    plt.plot(Ns, 1 - cum_distrib[:, x_id], color=cycle[i_func])
+    plt.plot(Ns, 1 - cum_distrib[:, x_id], 'x', color=cycle[i_func])
     plt.text(Ns[-1]+1, 0.9 - 0.9 * cum_distrib[-1, x_id], func_labels(func), color=cycle[i_func] )
 
 plt.figure(fr'$F(N, \alpha={x_special:.3})$ for different functions')
 plt.xlabel(r'$N$')
 plt.ylabel(fr'$1-F(N,\alpha={x_special:.3})$')
-plt.xscale('linear')
-plt.xlim([0, 55])
+plt.xscale('log')
+plt.xlim([6, 55])
 plt.yscale('log')
 plt.figure(fr'$F(N, \alpha={x_special:.3})$ for different functions').set_figwidth(8)
 plt.figure(fr'$F(N, \alpha={x_special:.3})$ for different functions').set_figheight(5)
@@ -230,7 +304,7 @@ plt.figure(fr'$F(N, \alpha={x_special:.3})$ for different functions').set_fighei
 # plt.title(fr'$1 - F(N, \alpha={x_special})$ for different functions')
 
 if save_fig:
-    plt.savefig(plt_dir + fr'\F(N, {x_special:.3}) against N.png')
+    plt.savefig(DFUtils.create_filename(plt_dir + fr'\F(N, {x_special:.3}) against N.png'))
 
 # # <<<<<<<<<<<<<<<<<<< Plot F(N, x) against x for different functions  >>>>>>>>>>>>>>>>>>
 # N_special = 22
