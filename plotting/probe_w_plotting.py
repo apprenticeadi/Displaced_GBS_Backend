@@ -1,13 +1,22 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy import stats
+from scipy.optimize import curve_fit
+from math import pi
 
 from src.utils import DFUtils
 
+
+def gaussian_fit(x, amp, x0, sigma):
+    return amp * np.exp(- (x - x0) ** 2 / (2 * sigma) ** 2)
+
+# def inverse_gaussian(y, amp, x0, sigma):
+#     dist_from_x0 = np.sqrt( - np.log(y/amp) * (2 * sigma) ** 2 )
+#     return x0 - dist_from_x0, x0 + dist_from_x0
+
 date_time = r'\03-03-2023(20-27-26.624767)'
 
-dir = fr'..\Results\probe_w'+date_time
-save_fig = False
+dir = fr'..\Results\probe_w' + date_time
+save_fig = True
 plot_dir = dir + r'\plots'
 cycle = plt.rcParams['axes.prop_cycle'].by_key()['color']
 
@@ -24,32 +33,62 @@ for i, n_i in enumerate(n_list):
 # Columns are n, min(|Z|), mean(|Z|), std(|Z|)
 stats = np.load(dir + r'\stats.npy')
 
-hist_n = np.logspace(1, 5, num=5, dtype=int)
+hist_n = np.logspace(n_start, n_end, num = n_end-n_start+1, dtype=int)
 fig = plt.figure('histograms')
 fig.set_size_inches(15, 8)
-bins = np.logspace(-5, 3, num=1000)
 cycle = plt.rcParams['axes.prop_cycle'].by_key()['color']
-for j, n in enumerate(hist_n):
-
-
+fit_results = np.zeros((num_n, 3), dtype=float)  # 'n', 'x0', 'sigma'
+for i_n, n in enumerate(n_list):
     Z_abs_values = np.load(dir + fr'\N={n}.npy')
+
+    if np.sum(np.isnan(Z_abs_values)) != 0:
+        continue
 
     mean_z = np.mean(Z_abs_values)
     med_z = np.median(Z_abs_values)
 
-    plt.hist(Z_abs_values, weights=np.ones_like(Z_abs_values) / Z_abs_values.size, bins=bins, log=True, alpha=0.5, color=cycle[j], label=f'n=1e{int(np.log10(n))}')
+    log_data = np.log(Z_abs_values)
+    log_mean_z = np.log(mean_z)
+    log_med_z = np.log(med_z)
 
-    min_ylim, max_ylim = plt.ylim()
-    plt.axvline(mean_z, color=cycle[j], linestyle='dashed')
-    # plt.text(mean_z*1.1, max_ylim*0.9, f'n=1e{int(np.log10(n))}')
+    if n in hist_n:
+        j = np.argmax(hist_n == n)
+        heights, bin_edges, _ = plt.hist(log_data, density=True, bins=1000, alpha=0.5, color=cycle[j],
+                                     label=f'n=1e{int(np.log10(n))}')
+        min_ylim, max_ylim = plt.ylim()
+        min_xlim, max_xlim = plt.xlim()
+        x_length = max_xlim - min_xlim
+        # plt.axvline(mean_z, color=cycle[j], linestyle='dashed')
+        # plt.text(mean_z*1.1, max_ylim*0.9, f'n=1e{int(np.log10(n))}')
 
-    plt.axvline(med_z, color=cycle[j], linestyle='-')
-    plt.text(med_z*1.1, max_ylim*0.9, f'N=1e{int(np.log10(n))}', color=cycle[j])
+        plt.axvline(log_med_z, color=cycle[j], linestyle='-')
+        plt.text(log_med_z * 1.1, max_ylim * 0.9, f'N=1e{int(np.log10(n))}', color=cycle[j])
 
-plt.xscale('log')
-plt.xlabel(r'$|\tilde{X}_{ij}|$')
-plt.ylabel('Frequency')
-min_xlim, max_xlim = plt.xlim()
+    else:
+        heights, bin_edges = np.histogram(log_data, bins=1000, density=True)
+
+
+    mid_bins = (bin_edges[1:] + bin_edges[:-1]) / 2
+
+    popt_gauss, pcov_gauss = curve_fit(f=gaussian_fit, xdata=mid_bins, ydata=heights,
+                                       p0=[max(heights), log_med_z, np.std(log_data)])
+
+    x0 = popt_gauss[1]
+    sigma = popt_gauss[2]
+
+    fit_results[i_n] = np.array([n, x0, sigma])
+
+    if n in hist_n:
+        plt.plot(mid_bins, gaussian_fit(mid_bins, *popt_gauss), color=cycle[j], linewidth=2, linestyle='--')
+
+        y_line = gaussian_fit(x0 + 3 * sigma, *popt_gauss)
+        # plt.axhline(y=y_line, xmin = ((x0 - 3 * sigma) - min_xlim) / x_length, xmax = ((x0 + 3 * sigma) - min_xlim) / x_length, color=cycle[j], linewidth=2)
+        plt.axvline(x0 - 3 * sigma, ymin = 0, ymax = y_line / max_ylim, color=cycle[j], linewidth=2)
+        plt.axvline(x0 + 3 * sigma, ymin = 0, ymax = y_line / max_ylim, color=cycle[j], linewidth=2)
+
+plt.xlabel(r'$\ln(|\tilde{X}_{ij}|)$')
+plt.ylabel('Probability density function')
+# min_xlim, max_xlim = plt.xlim()
 plt.legend()
 if save_fig:
     plt.savefig(DFUtils.create_filename(plot_dir + r'\histograms.png'))
@@ -61,15 +100,19 @@ if save_fig:
 
 plt.figure('mean value of |tildeX|')
 plt.plot(stats[:, 0], stats[:, 2], 'x', label=r'mean$(|\tilde{X}_{ij}|)$')
-slope, intercept, r_value, p_value, std_err = stats.linregress(log_ns, log_mean)
+# slope, intercept, r_value, p_value, std_err = stats.linregress(log_ns, log_mean)
 plt.plot(medians[:, 0], medians[:, 1], 'x', label=r'median($|\tilde{X}_{ij}|$)')
 plt.plot(stats[:, 0], stats[:, 1], 'x', label=r'min($|\tilde{X}_{ij}|$)')
-plt.plot(stats[:, 0], stats[:, 3], 'x', label=r'std($|\tilde{X}_{ij}|$)')
-plt.plot(stats[:, 0], 1 / np.sqrt(stats[:, 0]), linestyle='-.', color='black', label=r'$1/\sqrt{N}$')
-plt.plot(stats[:, 0], 1 / stats[:, 0], linestyle='--', color='black', label=r'$1/N$')
+plt.plot(fit_results[:, 0], np.exp(fit_results[:, 1] + 3 * fit_results[:, 2]), 'x', label=r'$3\sigma$ maximum')
+plt.plot(fit_results[:, 0], np.exp(fit_results[:, 2]), 'x', label=r'$\exp(\sigma_{log})$')
+# plt.plot(stats[:, 0], stats[:, 3], 'x', label=r'std($|\tilde{X}_{ij}|$)')
+plt.plot(stats[:, 0], 1 / np.sqrt(stats[:, 0]), linestyle='-.', color='black')
+plt.text(stats[-1, 0], 1 / np.sqrt(stats[-1, 0]), r'$1/\sqrt{N}$')
+plt.plot(stats[:, 0], 1 / stats[:, 0], linestyle='--', color='black')
+plt.text(stats[-1, 0], 1 / stats[-1, 0], r'$1/N$')
 # plt.plot(stats[:, 0], 1 / stats[:, 0] ** 2, linestyle='-', color='black', label=r'$1/N^2$')
 plt.xlabel(r'$N$')
-plt.title(r'Mean and min of $|\tilde{X}_{ij}|$ against $N$')
+# plt.title(r'Mean and min of $|\tilde{X}_{ij}|$ against $N$')
 # plt.xticks(n_list[::11])
 plt.yscale('log')
 plt.xscale('log')
