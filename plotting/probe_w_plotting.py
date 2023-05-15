@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 from math import pi
+from scipy import stats
 
 from src.utils import DFUtils
 
@@ -31,7 +32,7 @@ for i, n_i in enumerate(n_list):
     medians[i] = np.array([n_i, np.median(raw)])
 
 # Columns are n, min(|Z|), mean(|Z|), std(|Z|)
-stats = np.load(dir + r'\stats.npy')
+data_stats = np.load(dir + r'\stats.npy')
 
 hist_n = np.logspace(n_start, n_end, num = n_end-n_start+1, dtype=int)
 fig = plt.figure('histograms')
@@ -76,7 +77,7 @@ for i_n, n in enumerate(n_list):
     x0 = popt_gauss[1]
     sigma = popt_gauss[2]
 
-    fit_results[i_n] = np.array([n, x0, sigma])
+    fit_results[i_n] = np.array([n, x0, sigma])  # some rows are zeros due to some strange stuff with the data
 
     if n in hist_n:
         plt.plot(mid_bins, gaussian_fit(mid_bins, *popt_gauss), color=cycle[j], linewidth=2, linestyle='--')
@@ -86,6 +87,9 @@ for i_n, n in enumerate(n_list):
         plt.axvline(x0 - 3 * sigma, ymin = 0, ymax = y_line / max_ylim, color=cycle[j], linewidth=2)
         plt.axvline(x0 + 3 * sigma, ymin = 0, ymax = y_line / max_ylim, color=cycle[j], linewidth=2)
 
+
+fit_results = fit_results[np.where(fit_results[:,0] != 0)]  # Get rid of the zero data
+
 plt.xlabel(r'$\ln(|\tilde{X}_{ij}|)$')
 plt.ylabel('Probability density function')
 # min_xlim, max_xlim = plt.xlim()
@@ -94,23 +98,33 @@ if save_fig:
     plt.savefig(DFUtils.create_filename(plot_dir + r'\histograms.png'))
 
 # log_median = np.log(medians[:41, 1])
-# log_mean = np.log(stats[:41, 2])
-# log_min = np.log(stats[:41, 3])
-# log_ns = np.log(stats[:41, 0])
+# log_mean = np.log(data_stats[:41, 2])
+# log_min = np.log(data_stats[:41, 3])
+# log_ns = np.log(data_stats[:41, 0])
 
 plt.figure('mean value of |tildeX|')
-plt.plot(stats[:, 0], stats[:, 2], 'x', label=r'mean$(|\tilde{X}_{ij}|)$')
-# slope, intercept, r_value, p_value, std_err = stats.linregress(log_ns, log_mean)
+plt.plot(data_stats[:, 0], data_stats[:, 2], 'x', label=r'mean$(|\tilde{X}_{ij}|)$')
 plt.plot(medians[:, 0], medians[:, 1], 'x', label=r'median($|\tilde{X}_{ij}|$)')
-plt.plot(stats[:, 0], stats[:, 1], 'x', label=r'min($|\tilde{X}_{ij}|$)')
-plt.plot(fit_results[:, 0], np.exp(fit_results[:, 1] + 3 * fit_results[:, 2]), 'x', label=r'$3\sigma$ maximum')
+plt.plot(data_stats[:, 0], data_stats[:, 1], 'x', label=r'min($|\tilde{X}_{ij}|$)')
+
+fit_maxs = np.exp(fit_results[:, 1] + 3 * fit_results[:, 2])
+plt.plot(fit_results[:, 0], fit_maxs, 'x', label=r'$3\sigma$ maximum')
+log_ns = np.log(fit_results[:,0])
+log_max = np.log(fit_maxs)
+regress_result = stats.linregress(log_ns, log_max)
+slope = regress_result.slope
+intercept = regress_result.intercept
+plt.plot(n_list, np.exp(intercept) * n_list ** slope, '--', color='black')
+plt.text(fit_results[-1,0] / 5, fit_maxs[-1] * 5, fr'{np.exp(intercept):.3}$N^{{{slope:.3}}}$')
+
+
 plt.plot(fit_results[:, 0], np.exp(fit_results[:, 2]), 'x', label=r'$\exp(\sigma_{log})$')
-# plt.plot(stats[:, 0], stats[:, 3], 'x', label=r'std($|\tilde{X}_{ij}|$)')
-plt.plot(stats[:, 0], 1 / np.sqrt(stats[:, 0]), linestyle='-.', color='black')
-plt.text(stats[-1, 0], 1 / np.sqrt(stats[-1, 0]), r'$1/\sqrt{N}$')
-plt.plot(stats[:, 0], 1 / stats[:, 0], linestyle='--', color='black')
-plt.text(stats[-1, 0], 1 / stats[-1, 0], r'$1/N$')
-# plt.plot(stats[:, 0], 1 / stats[:, 0] ** 2, linestyle='-', color='black', label=r'$1/N^2$')
+# plt.plot(data_stats[:, 0], data_stats[:, 3], 'x', label=r'std($|\tilde{X}_{ij}|$)')
+plt.plot(data_stats[:, 0], 1 / np.sqrt(data_stats[:, 0]), linestyle='-.', color='black')
+plt.text(data_stats[-1, 0], 1 / np.sqrt(data_stats[-1, 0]), r'$1/\sqrt{N}$')
+plt.plot(data_stats[:, 0], 1 / data_stats[:, 0], linestyle='--', color='black')
+plt.text(data_stats[-1, 0], 1 / data_stats[-1, 0], r'$1/N$')
+# plt.plot(data_stats[:, 0], 1 / data_stats[:, 0] ** 2, linestyle='-', color='black', label=r'$1/N^2$')
 plt.xlabel(r'$N$')
 # plt.title(r'Mean and min of $|\tilde{X}_{ij}|$ against $N$')
 # plt.xticks(n_list[::11])
@@ -122,12 +136,12 @@ if save_fig:
 
 # plot std of |Z|
 # plt.figure('std of |tildeX|')
-# plt.plot(stats[:, 0], stats[:, 3], 'x', label=r'std($|\tilde{X}_{ij}|$)')
+# plt.plot(data_stats[:, 0], data_stats[:, 3], 'x', label=r'std($|\tilde{X}_{ij}|$)')
 # plt.xlabel('N')
 # plt.title(r'Std of $|\tilde{X}_{ij}|$ against N')
 # plt.xscale('log')
 # plt.yscale('log')
-# plt.plot(stats[:, 0], 1 / stats[:, 0], linestyle='--', color='black', label='1/sqrt(M)')
+# plt.plot(data_stats[:, 0], 1 / data_stats[:, 0], linestyle='--', color='black', label='1/sqrt(M)')
 # plt.legend()
 # if save_fig:
 #     plt.savefig(DFUtils.create_filename(plot_dir + r'\std.png'))
