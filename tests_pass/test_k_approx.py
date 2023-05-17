@@ -9,8 +9,8 @@ from src.utils import MatrixUtils
 
 
 M = 16
-r = 0.01
-beta = 1
+r = 0.26
+beta = 0.964
 output_modes = [1,3,5,6]
 
 N = int(np.sqrt(M))
@@ -27,14 +27,13 @@ gbs.add_squeezing(rs)
 gbs.add_displacement(betas)
 gbs.add_interferometer(U)
 
-A = gbs.calc_A()
-A_n = MatrixUtils.n_repetition(A, rpts)
+B = gbs.calc_B()
+B_n = MatrixUtils.n_repetition(B, output_n)
+half_gamma = gbs.calc_half_gamma()
+half_gamma_n = MatrixUtils.n_repetition(half_gamma, output_n)
 
-Gamma = gbs.calc_Gamma()
-Gamma_n = MatrixUtils.n_repetition(Gamma, rpts)
-
-lhaf_approx = loop_hafnian_approx_batch(A_n, Gamma_n, approx=2)
-lhaf_exact = hafnian(A_n + (Gamma_n - A_n.diagonal()) * np.eye(2*N), loop=True)
+lhaf_approx = loop_hafnian_approx_batch(B_n, half_gamma_n, approx=2)
+lhaf_exact = hafnian(B_n + (half_gamma_n - B_n.diagonal()) * np.eye(N), loop=True)
 
 print(f'approx |lhaf|^2 = {np.absolute(lhaf_approx)**2}')
 print(f'exact |lhaf|^2 = {np.absolute(lhaf_exact)**2}')
