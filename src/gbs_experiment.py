@@ -6,7 +6,7 @@ import copy
 from scipy.special import factorial
 
 from src.gbs_matrix import GBSMatrix, GaussianMatrix
-from src.utils import MatrixUtils
+from src.utils import MatrixUtils, DGBSUtils
 from src.symplectic import Symplectic, SymplecticXXPP
 from src.photon_number_distributions import single_displaced_squeezed_vacuum, total_displaced_squeezed_vacuum
 
@@ -363,7 +363,30 @@ class sduGBS(sudGBS):
 
         return single_displaced_squeezed_vacuum(r, beta, cutoff)
 
+    def create_d_gbs(self, K, N, w, U):
+        """
+        Creates a DisplacedGBS experiment according to our model of K identical displaced squeezed input, with
+        displacement/squeezing ratio w
+        """
 
+        N_mean = N / self.M
+        if w < 5:
+            guess_r = 0.3
+        elif w < 10:
+            guess_r = 0.01
+        else:
+            guess_r = 0.001
+        r, beta = DGBSUtils.solve_w(w, N_mean, guess_r)
 
+        rs = np.zeros(self.M)
+        rs[:K] = r
 
+        betas = np.zeros(self.M)
+        betas[:K] = beta
+
+        self.add_squeezing(rs)
+        self.add_displacement(betas)
+        self.add_interferometer(U)
+
+        return r, beta
 

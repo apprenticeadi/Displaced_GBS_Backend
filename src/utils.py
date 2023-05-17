@@ -237,7 +237,7 @@ class DGBSUtils:
         return (beta.conjugate() - beta * np.tanh(r)) / np.sqrt(np.tanh(r))
 
     @staticmethod
-    def solve_w(w, N_mean):
+    def solve_w(w, N_mean, guess_r = 0):
         """
         Find real squeezing and displacement parameters that satisfy
         w = beta * (1-tanh(r)) / sqrt(tanh(r))
@@ -253,7 +253,10 @@ class DGBSUtils:
             else:
                 return np.sqrt(N_mean - np.sinh(r) ** 2) * (1 - np.tanh(r)) / np.sqrt(np.tanh(r)) - w
 
-        root = fsolve(cost, np.arcsinh(np.sqrt(0.1 * N_mean)))
+        if guess_r == 0:
+            guess_r = np.arcsinh(np.sqrt(0.1 * N_mean))
+
+        root = fsolve(cost, guess_r)
         r = root[0]
         beta = np.sqrt(N_mean - np.sinh(r) ** 2)
 
