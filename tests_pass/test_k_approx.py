@@ -8,10 +8,10 @@ from src.gbs_experiment import sduGBS
 from src.utils import MatrixUtils
 
 
-M = 16
-r = 0.26
-beta = 0.964
-output_modes = [1,3,5,6]
+M = 25
+r = 0.37
+beta = 0.92
+output_modes = [1,3,5,6,10]
 
 N = int(np.sqrt(M))
 K = N
@@ -32,7 +32,7 @@ B_n = MatrixUtils.n_repetition(B, output_n)
 half_gamma = gbs.calc_half_gamma()
 half_gamma_n = MatrixUtils.n_repetition(half_gamma, output_n)
 
-lhaf_approx = loop_hafnian_approx_batch(B_n, half_gamma_n, approx=2)
+lhaf_approx = loop_hafnian_approx_batch(B_n, half_gamma_n, k=1)
 lhaf_exact = hafnian(B_n + (half_gamma_n - B_n.diagonal()) * np.eye(N), loop=True)
 
 print(f'approx |lhaf|^2 = {np.absolute(lhaf_approx)**2}')
