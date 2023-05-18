@@ -92,9 +92,7 @@ for i_N, N in enumerate(Ns):
 
         t1 = time.time()
         lhaf_exact_val = loop_hafnian(B_n, gamma_n)
-        t2 = time.time()
         lhaf_exact[i] = lhaf_exact_val
-        logging.info(f'{i}-th output={output_ports}, k=exact, |lhaf|^2={np.absolute(lhaf_exact_val) ** 2}, time={t2 - t1}')
 
         for i_k, k_label in enumerate(k_labels):
 
@@ -103,16 +101,17 @@ for i_N, N in enumerate(Ns):
                 lhaf_value = loop_hafnian_approx_batch(B_n, gamma_n, k=k)
             k = int(k_label)
 
-            t1 = time.time()
+
             if k >= N // 2:
                 lhaf_value = lhaf_exact_val
             else:
                 lhaf_value = loop_hafnian_approx_batch(B_n, gamma_n, k=k)
-            t2 = time.time()
+
 
             lhaf_approx[i, i_k] = lhaf_value
 
-            logging.info(f'{i}-th output={output_ports}, k={k_label}, |lhaf|^2={np.absolute(lhaf_value)**2}, time={t2-t1}')
+        t2 = time.time()
+        logging.info(f'{i}-th output={output_ports}, time={t2-t1}, exact |lhaf|^2={np.absolute(lhaf_exact_val)**2}')
 
         i += 1
 
