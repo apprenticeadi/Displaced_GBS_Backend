@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 from math import pi
 from scipy import stats
+from scipy.special import erf
 
 from src.utils import DFUtils
 
@@ -101,6 +102,8 @@ if save_fig:
 # log_mean = np.log(data_stats[:41, 2])
 # log_min = np.log(data_stats[:41, 3])
 # log_ns = np.log(data_stats[:41, 0])
+log_ns = np.log(fit_results[:,0])
+
 
 plt.figure('mean value of |tildeX|')
 plt.plot(data_stats[:, 0], data_stats[:, 2], 'x', label=r'mean$(|\tilde{X}_{ij}|)$')
@@ -109,7 +112,7 @@ plt.plot(data_stats[:, 0], data_stats[:, 1], 'x', label=r'min($|\tilde{X}_{ij}|$
 
 fit_maxs = np.exp(fit_results[:, 1] + 3 * fit_results[:, 2])
 plt.plot(fit_results[:, 0], fit_maxs, 'x', label=r'$3\sigma$ maximum')
-log_ns = np.log(fit_results[:,0])
+
 log_max = np.log(fit_maxs)
 regress_result = stats.linregress(log_ns, log_max)
 slope = regress_result.slope
@@ -117,8 +120,8 @@ intercept = regress_result.intercept
 plt.plot(n_list, np.exp(intercept) * n_list ** slope, '--', color='black')
 plt.text(fit_results[-1,0] / 5, fit_maxs[-1] * 5, fr'{np.exp(intercept):.3}$N^{{{slope:.3}}}$')
 
-
 plt.plot(fit_results[:, 0], np.exp(fit_results[:, 2]), 'x', label=r'$\exp(\sigma_{log})$')
+
 # plt.plot(data_stats[:, 0], data_stats[:, 3], 'x', label=r'std($|\tilde{X}_{ij}|$)')
 plt.plot(data_stats[:, 0], 1 / np.sqrt(data_stats[:, 0]), linestyle='-.', color='black')
 plt.text(data_stats[-1, 0], 1 / np.sqrt(data_stats[-1, 0]), r'$1/\sqrt{N}$')
@@ -131,17 +134,43 @@ plt.xlabel(r'$N$')
 plt.yscale('log')
 plt.xscale('log')
 plt.legend()
+plt.title(r'Distribution of $|\tilde{X}_{ij}|$')
 if save_fig:
     plt.savefig(DFUtils.create_filename(plot_dir + r'\mean_and_min.png'))
 
-# plot std of |Z|
-# plt.figure('std of |tildeX|')
-# plt.plot(data_stats[:, 0], data_stats[:, 3], 'x', label=r'std($|\tilde{X}_{ij}|$)')
-# plt.xlabel('N')
-# plt.title(r'Std of $|\tilde{X}_{ij}|$ against N')
-# plt.xscale('log')
-# plt.yscale('log')
-# plt.plot(data_stats[:, 0], 1 / data_stats[:, 0], linestyle='--', color='black', label='1/sqrt(M)')
-# plt.legend()
-# if save_fig:
-#     plt.savefig(DFUtils.create_filename(plot_dir + r'\std.png'))
+plt.figure('median and sigma of tildeY = ln(tildeX)')
+plt.plot(log_ns, fit_results[:, 1], 'x', label=r'$\mu_{\tilde{y}}$')
+mu_y_fit = stats.linregress(log_ns, fit_results[:, 1])
+plt.plot(log_ns, mu_y_fit.slope * log_ns + mu_y_fit.intercept, '--', color='black')
+plt.text(log_ns[-1] / 2, fit_results[-1, 1], fr'$\mu_{{\tilde{{y}}}}={mu_y_fit.slope:.3}*\ln(N)+{mu_y_fit.intercept:.3}$')
+
+plt.plot(log_ns, fit_results[:, 2], 'x', label=r'$\sigma_{\tilde{y}}$')
+sigma_y_fit = stats.linregress(log_ns, fit_results[:, 2])
+plt.plot(log_ns, sigma_y_fit.slope * log_ns + sigma_y_fit.intercept, '--', color='black')
+plt.text(log_ns[-1] / 2, 0, fr'$\sigma_{{\tilde{{y}}}}={sigma_y_fit.slope:.3}*\ln(N)+{sigma_y_fit.intercept:.3}$')
+plt.legend()
+plt.xlabel(r'$\ln(N)$')
+plt.title(r'Distribution of $\tilde{y}_{ij}=\ln(|\tilde{X}_{ij}|)$')
+if save_fig:
+    plt.savefig(DFUtils.create_filename(plot_dir + r'\Gaussian_fit_to_tilde_y.png'))
+
+print(rf'$n \sigma{{\tilde{{y}} }}$ corresponds to $\tilde{{x}} \leq {np.exp(mu_y_fit.intercept):.3} * {np.exp(sigma_y_fit.intercept):.3}^n * N^{{{mu_y_fit.slope:.3} + {sigma_y_fit.slope:.3}n')
+
+
+plt.figure(r'probability of all tildeX smaller than some bound')
+# Ns = np.arange(2, 1000, step=1)
+Ns = np.logspace(1, 4, dtype=int, num=100)
+ns = [4, 6, 8]
+prob_dict = {}
+prob_dict['N'] = Ns
+for n in ns:
+    probs = np.power(0.5 * (1 + erf(n / np.sqrt(2))), (Ns - 1)**2 )
+    prob_dict[f'n={n}'] = probs
+    plt.plot(Ns, probs, label=fr'all $\tilde{{X}}_{{ij}} \leq {np.exp(mu_y_fit.intercept):.3} * {np.exp(sigma_y_fit.intercept):.3}^{n} * N^{{{mu_y_fit.slope:.3}}}$')
+plt.xlabel('N')
+plt.legend()
+
+plt.yscale('linear')
+
+ns = np.arange(1, 9)
+w_coefficient = np.sqrt(2 * np.exp(mu_y_fit.intercept) * np.e * np.exp(sigma_y_fit.intercept) ** ns)
