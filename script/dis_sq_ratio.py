@@ -5,10 +5,10 @@ from src.utils import DGBSUtils, DFUtils
 
 
 Ns = np.logspace(1, 5, num=101, dtype=int)
-w_label = 'w=1N^0.25'
+w_label = 'w=0.09N^0.25'
 
 plot_dir = fr'..\Plots\dis_sq_ratio\{w_label}'
-save_fig = True
+save_fig = False
 
 results_dict = {
     'N': [], 'w': [], 'r': [], 'beta': [], 'ratio': []
@@ -16,20 +16,9 @@ results_dict = {
 
 for N in Ns:
 
-    if 'N' in w_label:
-        w_scale = float(w_label[w_label.index('=')+1 : w_label.index('N')])
-        w_exp = float(w_label[w_label.index('N')+2:])
-        w = w_scale * N ** w_exp
-    else:
-        w = float(w_label[2:])
+    w = DGBSUtils.read_w_label(w_label, N)
 
-    if w < 2:
-        guess_r = 0.3
-    elif w < 10:
-        guess_r = 0.01
-    else:
-        guess_r = 0.001
-    r, beta = DGBSUtils.solve_w(w, N_mean=1, guess_r=guess_r)
+    r, beta = DGBSUtils.solve_w(w, N_mean=1)
     w_calc = beta * (1 - np.tanh(r)) / np.sqrt(np.tanh(r))
 
     if np.isclose(w, w_calc):

@@ -370,13 +370,11 @@ class sduGBS(sudGBS):
         """
 
         N_mean = N / self.M
-        if w < 5:
-            guess_r = 0.3
-        elif w < 10:
-            guess_r = 0.01
-        else:
-            guess_r = 0.001
-        r, beta = DGBSUtils.solve_w(w, N_mean, guess_r)
+
+        r, beta = DGBSUtils.solve_w(w, N_mean, guess_r=0)
+        w_calc = beta * (1 - np.tanh(r)) / np.sqrt(np.tanh(r))
+        if not np.isclose(w_calc, w):
+            raise Warning(f'solve_w FAILED: target w = {w}, calc w = {w_calc}, err={w_calc-w}, N={N}')
 
         rs = np.zeros(self.M)
         rs[:K] = r

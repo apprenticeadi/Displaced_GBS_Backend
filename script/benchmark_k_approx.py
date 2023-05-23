@@ -12,7 +12,7 @@ from thewalrus import loop_hafnian
 
 from src.loop_hafnian_k_approx import loop_hafnian_approx_batch
 from src.gbs_experiment import sduGBS
-from src.utils import LogUtils, DFUtils
+from src.utils import LogUtils, DFUtils, DGBSUtils
 
 
 Ns = np.arange(4, 20, step=1)
@@ -45,13 +45,7 @@ results_dir = rf'..\Results\benchmark_k_approx\{w_label}_{max_num_outputs}output
 
 for i_N, N in enumerate(Ns):
 
-    if w_label == 'w=1':
-        w = 1
-    elif w_label[2] == 'N':
-        exponent_w = float(w_label[4:])
-        w = N ** exponent_w
-    else:
-        raise Exception('w_label not recognized')
+    w = DGBSUtils.read_w_label(w_label, N)
 
     # <<<<<<<<<<<<<<<<<<< Design Experiment  >>>>>>>>>>>>>>>>>>
     M = N ** 2

@@ -254,10 +254,31 @@ class DGBSUtils:
                 return np.sqrt(N_mean - np.sinh(r) ** 2) * (1 - np.tanh(r)) / np.sqrt(np.tanh(r)) - w
 
         if guess_r == 0:
-            guess_r = np.arcsinh(np.sqrt(0.1 * N_mean))
+            if w < 2:
+                guess_r = 0.3
+            elif w < 10:
+                guess_r = 0.01
+            else:
+                guess_r = 0.001
 
         root = fsolve(cost, guess_r)
         r = root[0]
         beta = np.sqrt(N_mean - np.sinh(r) ** 2)
 
         return r, beta
+
+    @staticmethod
+    def read_w_label(w_label, N):
+        if 'N' in w_label:
+
+            if w_label.index('=') + 1 == w_label.index('N'):
+                w_scale=1
+            else:
+                w_scale = float(w_label[w_label.index('=') + 1: w_label.index('N')])
+
+            w_exp = float(w_label[w_label.index('N') + 2:])
+            w = w_scale * N ** w_exp
+        else:
+            w = float(w_label[2:])
+
+        return w
