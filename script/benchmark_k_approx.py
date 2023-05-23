@@ -90,10 +90,10 @@ for i_N, N in enumerate(Ns):
             lhaf_approx[i, i_k] = lhaf_value
 
         t2 = time.time()
-        logging.info(f'{i}-th output={output_ports}, time={t2-t1}, exact |lhaf|^2={np.absolute(lhaf_exact_val)**2}')
+        logging.info(f'{i}-th output={output_ports}, time={t2-t1}')
 
     # <<<<<<<<<<<<<<<<<<< Save lhaf results  >>>>>>>>>>>>>>>>>>
     np.save(results_N_dir + '\outputs.npy', outputs)
     np.save(results_N_dir + '\k=exact.npy', lhaf_exact)
     for i_k, k in enumerate(ks):
-        np.save(results_N_dir + f'\k={k_label}.npy', lhaf_approx[:, i_k])
+        np.save(results_N_dir + f'\k={k}.npy', lhaf_approx[:, i_k])
