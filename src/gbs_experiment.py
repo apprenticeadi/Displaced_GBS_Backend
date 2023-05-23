@@ -369,9 +369,9 @@ class sduGBS(sudGBS):
         displacement/squeezing ratio w
         """
 
-        N_mean = N / self.M
+        N_mean = N / K
 
-        r, beta = DGBSUtils.solve_w(w, N_mean, guess_r=0)
+        r, beta = DGBSUtils.solve_w(w, N_mean)
         w_calc = beta * (1 - np.tanh(r)) / np.sqrt(np.tanh(r))
         if not np.isclose(w_calc, w):
             raise Warning(f'solve_w FAILED: target w = {w}, calc w = {w_calc}, err={w_calc-w}, N={N}')
