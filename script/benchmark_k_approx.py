@@ -6,7 +6,7 @@ import datetime
 import logging
 import time
 import itertools
-import pandas as pd
+import random
 
 from thewalrus import loop_hafnian
 
@@ -17,13 +17,9 @@ from src.utils import LogUtils, DFUtils, DGBSUtils
 
 Ns = np.arange(4, 20, step=1)
 w_label = 'w=0.09N^0.25'
-k_labels = np.asarray(['0', '1', '2'])
+ks = np.asarray([0, 1, 2])
 max_num_outputs = 10000
 
-tvd_dict = {}
-tvd_dict['N'] = Ns
-for k_label in k_labels:
-    tvd_dict[k_label] = np.zeros(len(Ns), dtype=np.float64)
 
 # plt.figure('runtime comparison')
 # plt.plot(np.power(2, Ns), label=r'$2^N$')
@@ -38,7 +34,7 @@ for k_label in k_labels:
 # <<<<<<<<<<<<<<<<<<< Logging  >>>>>>>>>>>>>>>>>>
 time_stamp = datetime.datetime.now().strftime("%d-%m-%Y(%H-%M-%S.%f)")
 LogUtils.log_config(time_stamp=time_stamp, filehead='benchmark_k_approx', module_name='', level=logging.INFO)
-logging.info(f'Benchmark k-th order approximation by TVD for N={Ns}, {w_label} and k={k_labels}. The maximum number of outputs '
+logging.info(f'Benchmark k-th order approximation for N={Ns}, {w_label} and k={ks}. The maximum number of outputs '
              f'for which the lhaf is calculated is capped by {max_num_outputs}. ')
 
 results_dir = rf'..\Results\benchmark_k_approx\{w_label}_{max_num_outputs}outputs'
@@ -66,20 +62,16 @@ for i_N, N in enumerate(Ns):
     num_outputs = np.min((int(comb(M, N)), max_num_outputs))
     outputs = np.zeros( (num_outputs, N), dtype=int)
     lhaf_exact = np.zeros(num_outputs, dtype=np.complex128)
-    lhaf_approx = np.zeros((num_outputs, len(k_labels)), dtype=np.complex128)  # Each column corresponds to a k-value
+    lhaf_approx = np.zeros((num_outputs, len(ks)), dtype=np.complex128)  # Each column corresponds to a k-value
 
     logging.info(f'Generate experiment for M={M}, K=N={N}, r={r}, beta={beta}. '
                  f'Calculate lHaf for {num_outputs} outputs.')
 
     # <<<<<<<<<<<<<<<<<<< Calculate lhafs  >>>>>>>>>>>>>>>>>>
-    i = 0
-    for output in itertools.combinations(range(M), N):
-        # If comb(M,N)> max_num_output, then I will just take the first [max_num_output] patterns of combinations(M,N),
-        # instead of selecting random ones.
-        if i >= num_outputs:
-            break
-
-        output_ports = np.asarray(output, dtype=int)
+    for i in range(num_outputs):
+        output_ports = np.asarray(random.sample(range(M), N), dtype=int)
+        while output_ports in outputs:
+            output_ports = np.asarray(random.sample(range(M), N), dtype=int)
         outputs[i] = output_ports
 
         B_n = B[output_ports][:, output_ports]
@@ -89,50 +81,19 @@ for i_N, N in enumerate(Ns):
         lhaf_exact_val = loop_hafnian(B_n, gamma_n)
         lhaf_exact[i] = lhaf_exact_val
 
-        for i_k, k_label in enumerate(k_labels):
-
-            if k_label == 'exact':
-                k = N // 2 + 1
-                lhaf_value = loop_hafnian_approx_batch(B_n, gamma_n, k=k)
-            k = int(k_label)
-
-
+        for i_k, k in enumerate(ks):
             if k >= N // 2:
                 lhaf_value = lhaf_exact_val
             else:
                 lhaf_value = loop_hafnian_approx_batch(B_n, gamma_n, k=k)
-
 
             lhaf_approx[i, i_k] = lhaf_value
 
         t2 = time.time()
         logging.info(f'{i}-th output={output_ports}, time={t2-t1}, exact |lhaf|^2={np.absolute(lhaf_exact_val)**2}')
 
-        i += 1
-
     # <<<<<<<<<<<<<<<<<<< Save lhaf results  >>>>>>>>>>>>>>>>>>
     np.save(results_N_dir + '\outputs.npy', outputs)
     np.save(results_N_dir + '\k=exact.npy', lhaf_exact)
-    for i_k, k_label in enumerate(k_labels):
+    for i_k, k in enumerate(ks):
         np.save(results_N_dir + f'\k={k_label}.npy', lhaf_approx[:, i_k])
-
-    # # <<<<<<<<<<<<<<<<<<< Calculate TVD for each N  >>>>>>>>>>>>>>>>>>
-    # lhaf_squared_exact = np.absolute(lhaf_exact) ** 2
-    # lhaf_squared_approx = np.absolute(lhaf_approx) ** 2
-    #
-    # for i_k, k_label in enumerate(k_labels):
-    #     tvd = 0.5 * np.sum(np.absolute(lhaf_squared_approx[:, i_k] - lhaf_squared_exact))
-    #     logging.info(f'k={k_label}, tvd={tvd}')
-    #     tvd_dict[k_label][i_N] = tvd
-
-# TVD is not a good metric here
-# # <<<<<<<<<<<<<<<<<<< Save TVD dataframe  >>>>>>>>>>>>>>>>>>
-# tvd_df = pd.DataFrame(data=tvd_dict)
-# tvd_df.to_csv(results_dir + f'\TVD_{time_stamp}.csv')
-#
-# plt.figure('TVD scaled')
-# for k_label in k_labels:
-#     plt.plot(tvd_dict['N'], comb(Ns**2, Ns) / 10 * tvd_dict[k_label], label=f'k={k_label}')
-# plt.legend()
-# plt.yscale('log')
-
