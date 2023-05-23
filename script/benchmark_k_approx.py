@@ -16,7 +16,7 @@ from src.utils import LogUtils, DFUtils, DGBSUtils
 
 
 Ns = np.arange(4, 20, step=1)
-w_label = 'w=1'
+w_label = 'w=0.09N^0.25'
 k_labels = np.asarray(['0', '1', '2'])
 max_num_outputs = 10000
 
@@ -59,8 +59,9 @@ for i_N, N in enumerate(Ns):
     B = experiment.calc_B()
     gamma = experiment.calc_half_gamma()
 
-    np.save(DFUtils.create_filename(results_N_dir + '\B.npy'), B)
-    np.save(results_N_dir + '\gamma.npy', gamma)
+    np.save(DFUtils.create_filename(results_N_dir + r'\B.npy'), B)
+    np.save(results_N_dir + r'\gamma.npy', gamma)
+    np.save(results_N_dir + r'\U.npy', U)
 
     num_outputs = np.min((int(comb(M, N)), max_num_outputs))
     outputs = np.zeros( (num_outputs, N), dtype=int)
