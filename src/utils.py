@@ -254,12 +254,18 @@ class DGBSUtils:
                 return np.sqrt(N_mean - np.sinh(r) ** 2) * (1 - np.tanh(r)) / np.sqrt(np.tanh(r)) - w
 
         if guess_r == 0:
-            if w < 2:
-                guess_r = 0.3
-            elif w < 10:
+            if w <= 2:
+                guess_r = 0.2
+            elif w <= 3.5:
+                guess_r = 0.1
+            elif w <= 6:
+                guess_r = 0.03
+            elif w <= 10:
                 guess_r = 0.01
-            else:
+            elif w <= 30:
                 guess_r = 0.001
+            else:
+                guess_r = 0.0001
 
         root = fsolve(cost, guess_r)
         r = root[0]
