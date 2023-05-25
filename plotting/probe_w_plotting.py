@@ -4,6 +4,7 @@ from scipy.optimize import curve_fit
 from math import pi
 from scipy import stats
 from scipy.special import erf
+import pandas as pd
 
 from src.utils import DFUtils
 
@@ -15,14 +16,16 @@ def gaussian_fit(x, amp, x0, sigma):
 #     dist_from_x0 = np.sqrt( - np.log(y/amp) * (2 * sigma) ** 2 )
 #     return x0 - dist_from_x0, x0 + dist_from_x0
 
+# <<<<<<<<<<<<<<<<<<< Which datafiles to use  >>>>>>>>>>>>>>>>>>
 date_time = r'\03-03-2023(20-27-26.624767)'
 
 dir = fr'..\Results\probe_w' + date_time
-save_fig = True
+save_fig = False
 plot_dir = dir + r'\plots'
 cycle = plt.rcParams['axes.prop_cycle'].by_key()['color']
 
-# This is specific to this simulation. Change it for different simulations. Here I do this to calculate the median.
+# <<<<<<<<<<<<<<<<<<< Calculate median  >>>>>>>>>>>>>>>>>>
+# This is specific to this simulation. Change it for different simulations.
 n_start = 1
 n_end = 6
 num_n = 101
@@ -32,9 +35,11 @@ for i, n_i in enumerate(n_list):
     raw = np.load(dir + fr'\N={n_i}.npy')
     medians[i] = np.array([n_i, np.median(raw)])
 
+# <<<<<<<<<<<<<<<<<<< Collect min, mean and std  >>>>>>>>>>>>>>>>>>
 # Columns are n, min(|Z|), mean(|Z|), std(|Z|)
 data_stats = np.load(dir + r'\stats.npy')
 
+# <<<<<<<<<<<<<<<<<<< Plot and fit histogram of ln(tildeX) >>>>>>>>>>>>>>>>>>
 hist_n = np.logspace(n_start, n_end, num = n_end-n_start+1, dtype=int)
 fig = plt.figure('histograms')
 fig.set_size_inches(15, 8)
@@ -105,6 +110,7 @@ if save_fig:
 log_ns = np.log(fit_results[:,0])
 
 
+# <<<<<<<<<<<<<<<<<<< Plot min, mean and median of tilde X  >>>>>>>>>>>>>>>>>>
 plt.figure('mean value of |tildeX|')
 plt.plot(data_stats[:, 0], data_stats[:, 2], 'x', label=r'mean$(|\tilde{X}_{ij}|)$')
 plt.plot(medians[:, 0], medians[:, 1], 'x', label=r'median($|\tilde{X}_{ij}|$)')
@@ -138,6 +144,8 @@ plt.title(r'Distribution of $|\tilde{X}_{ij}|$')
 if save_fig:
     plt.savefig(DFUtils.create_filename(plot_dir + r'\mean_and_min.png'))
 
+
+# <<<<<<<<<<<<<<<<<<< Plot Gaussian fit to tildeY = ln(tildeX)  >>>>>>>>>>>>>>>>>>
 plt.figure('median and sigma of tildeY = ln(tildeX)')
 plt.plot(log_ns, fit_results[:, 1], 'x', label=r'$\mu_{\tilde{y}}$')
 mu_y_fit = stats.linregress(log_ns, fit_results[:, 1])
@@ -145,6 +153,7 @@ plt.plot(log_ns, mu_y_fit.slope * log_ns + mu_y_fit.intercept, '--', color='blac
 plt.text(log_ns[-1] / 2, fit_results[-1, 1], fr'$\mu_{{\tilde{{y}}}}={mu_y_fit.slope:.3}*\ln(N)+{mu_y_fit.intercept:.3}$')
 
 plt.plot(log_ns, fit_results[:, 2], 'x', label=r'$\sigma_{\tilde{y}}$')
+mean_sigma_y = np.mean(fit_results[:, 2])
 sigma_y_fit = stats.linregress(log_ns, fit_results[:, 2])
 plt.plot(log_ns, sigma_y_fit.slope * log_ns + sigma_y_fit.intercept, '--', color='black')
 plt.text(log_ns[-1] / 2, 0, fr'$\sigma_{{\tilde{{y}}}}={sigma_y_fit.slope:.3}*\ln(N)+{sigma_y_fit.intercept:.3}$')
@@ -156,21 +165,44 @@ if save_fig:
 
 print(rf'$n \sigma{{\tilde{{y}} }}$ corresponds to $\tilde{{x}} \leq {np.exp(mu_y_fit.intercept):.3} * {np.exp(sigma_y_fit.intercept):.3}^n * N^{{{mu_y_fit.slope:.3} + {sigma_y_fit.slope:.3}n')
 
+# <<<<<<<<<<<<<<<<<<< What is the confidence coefficient to w  >>>>>>>>>>>>>>>>>>
+ns = np.arange(1, 9)
+w_coefficient = np.sqrt(2 * np.exp(mu_y_fit.intercept) * np.e * np.exp(mean_sigma_y) ** ns)
+w_coefficient_prime = 2 * np.sqrt(np.exp(mu_y_fit.intercept) * np.exp(-mean_sigma_y) ** ns)
+# <<<<<<<<<<<<<<<<<<< Calculate and plot the probability of having all tildeX bounded by some bound  >>>>>>>>>>>>>>>>>>
+ns = [1, 2, 3, 4, 6]
+Ns = np.logspace(1, 4, dtype=int, num=100)
+num_N = np.argmax(fit_results[:, 0] >= Ns.max())
+
+# empirical_freq = pd.DataFrame(index=range(num_N), columns=['N'] + ns)  # The empirical frequency of all tildeX being bounded by the bound, from the 100,000 tilde X trials.
+# for i_N, N in enumerate(fit_results[:num_N, 0]):
+#     N = int(N)
+#     Z_abs_values = np.load(dir + fr'\N={N}.npy')
+#     num_trials = len(Z_abs_values)
+#     empirical_freq.iloc[i_N, 0] = N
+#     for i_n, n in enumerate(ns):
+#         bound = np.exp(mu_y_fit.intercept) * (np.exp(mean_sigma_y) ** n) * (N ** mu_y_fit.slope)
+#         empirical_freq.iloc[i_N, i_n + 1] = np.sum(Z_abs_values < bound) / num_trials
+# # what we find in empirical freq is much smaller than the theoretical value calculated from erf.
 
 plt.figure(r'probability of all tildeX smaller than some bound')
 # Ns = np.arange(2, 1000, step=1)
-Ns = np.logspace(1, 4, dtype=int, num=100)
-ns = [4, 6, 8]
+
+
 prob_dict = {}
 prob_dict['N'] = Ns
 for n in ns:
     probs = np.power(0.5 * (1 + erf(n / np.sqrt(2))), (Ns - 1)**2 )
     prob_dict[f'n={n}'] = probs
-    plt.plot(Ns, probs, label=fr'all $\tilde{{X}}_{{ij}} \leq {np.exp(mu_y_fit.intercept):.3} * {np.exp(sigma_y_fit.intercept):.3}^{n} * N^{{{mu_y_fit.slope:.3}}}$')
+    plt.plot(Ns, probs, label=fr'all $\tilde{{X}}_{{ij}} \leq {np.exp(mu_y_fit.intercept):.3} * {np.exp(mean_sigma_y):.3}^{n} * N^{{{mu_y_fit.slope:.3}}}$')
 plt.xlabel('N')
+plt.xlim(8, 30)
+plt.xticks([10, 20, 30])
 plt.legend()
-
 plt.yscale('linear')
+plt.title('Probability of all tildeX bounded by some bound')
+if save_fig:
+    plt.savefig(plot_dir + r'\prob_all_tX_bounded 2.png')
 
-ns = np.arange(1, 9)
-w_coefficient = np.sqrt(2 * np.exp(mu_y_fit.intercept) * np.e * np.exp(sigma_y_fit.intercept) ** ns)
+
+
