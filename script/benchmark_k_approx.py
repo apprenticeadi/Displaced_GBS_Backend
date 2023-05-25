@@ -72,8 +72,11 @@ for w_label in w_labels:
         for i in range(num_outputs):
             t0 = time.time()
             output_ports = np.asarray(random.sample(range(M), N), dtype=int)
-            while output_ports in outputs[:i]:
-                output_ports = np.asarray(random.sample(range(M), N), dtype=int)
+
+            # let's ignore duplicates for now. For some reason the program gets stuck when I include the following part.
+            # while output_ports in outputs[:i]:
+            #     output_ports = np.asarray(random.sample(range(M), N), dtype=int)
+
             outputs[i] = output_ports
             t1 = time.time()
 
