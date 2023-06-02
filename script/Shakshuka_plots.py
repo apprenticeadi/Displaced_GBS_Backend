@@ -6,10 +6,10 @@ import math
 
 from src.utils import MatrixUtils
 # <<<<<<<<<<<<<<<<<<< Size  >>>>>>>>>>>>>>>>>>
-M = 500
+M = 100
 N = int(np.floor(np.sqrt(M)))
 K = N
-w = 1  # The diagonal weight.
+w = 3.7 * N ** 0.25  # The diagonal weight.
 print(f'M={M}, N={N}, K={K}')
 print(f'w={w}')
 

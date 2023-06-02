@@ -4,8 +4,9 @@ from scipy import stats
 from src.utils import DGBSUtils, DFUtils
 
 
-Ns = np.logspace(1, 5, num=101, dtype=int)
-w_label = 'w=0.09N^0.25'
+# Ns = np.logspace(1, 5, num=101, dtype=int)
+Ns = np.arange(4, 20, step=1)
+w_label = 'w=N^0.25'
 
 plot_dir = fr'..\Plots\dis_sq_ratio\{w_label}'
 save_fig = False
