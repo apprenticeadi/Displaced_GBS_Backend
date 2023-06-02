@@ -4,7 +4,7 @@ import numpy as np
 from src.utils import  DFUtils
 
 Ns = np.arange(4, 20, step=1)
-w_label='w=3.7N^0.25'
+w_label='w=5.2N^0.25'
 output_num = 100
 ks = [0, 1, 2, 3]
 

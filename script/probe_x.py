@@ -26,7 +26,8 @@ dir = r'..\Results\probe_x\{}'.format(time_stamp)
 LogUtils.log_config(time_stamp='', dir=dir, filehead='log', module_name='', level=logging.INFO)
 
 logging.info('In this script, we find the scaling of |x_ij|=|B_ij/gamma_i*gamma_j| with M for '
-             'diagonal weight w = beta*(1-tanh(r))/sqrt(tanhr) = {}.'.format(w))
+             'diagonal weight w = beta*(1-tanh(r))/sqrt(tanhr) = {}. '
+             'In this script we calculate sum of X_ij from 1 to M'.format(w))
 
 # Each row contains [M, min of x_abs, error, max of x_abs, error, min of sum_x_abs, error, max of sum_x_abs, error]
 data = np.zeros((M_num, 9), dtype=float)
@@ -49,11 +50,11 @@ for iter, M in enumerate(Ms):
         if save_raw_x:
             np.save(DFUtils.create_filename(dir + fr'\raw\M={M}\raw_x_{i}.npy'), x)
 
-        x_n = x[:N, :N]  # we only want the top left N times N submatrix
+        # x_n = x[:N, :N]  # we only want the top left N times N submatrix
         x_abs = np.absolute(x)
         masked_x_abs = x_abs[
             ~np.eye(len(x_abs), dtype=bool)]  # mask out diagonal terms which are zero. masked shaped is 1d
-        sum_x_abs = np.sum(x_abs[:N,:N], axis=1)
+        sum_x_abs = np.sum(x_abs, axis=1)
 
         data_M_i[i] = np.array([np.min(masked_x_abs), np.max(masked_x_abs), np.min(sum_x_abs), np.max(sum_x_abs)])
 

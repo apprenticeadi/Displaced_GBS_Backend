@@ -141,12 +141,12 @@ def wrapper(N, total_repeats, sub_repeats, func='lhaf', w=0., w_string='0'):
         logging.info(f'Calculate {i}-th batch {sub_repeats} {func}s for N={N}, w={float(w):.3} took time={t_f - t_i}')
 
 
+# for N in np.arange(6, 30, step=2):
+#     wrapper(N, total_repeats=100000, sub_repeats=1000, func='lhaf', w=N**0.25, w_string='N^0.25')
 for N in np.arange(6, 30, step=2):
-    wrapper(N, total_repeats=100000, sub_repeats=1000, func='lhaf', w=N**0.25, w_string='N^0.25')
-for N in np.arange(30, 36, step=2):
-    wrapper(N, total_repeats=10000, sub_repeats=1000, func='lhaf', w=N**0.25, w_string='N^0.25')
-for N in np.arange(30, 36, step=2):
-    wrapper(N, total_repeats=5000, sub_repeats=1000, func='lhaf', w=1., w_string='1')
+    wrapper(N, total_repeats=100000, sub_repeats=1000, func='lhaf', w=0.1*N**0.25, w_string='0.1N^0.25')
+for N in np.arange(30, 35, step=1):
+    wrapper(N, total_repeats=10000, sub_repeats=1000, func='lhaf', w=0.1*N**0.25, w_string='0.1N^0.25')
 # for N in Ns:
 #     wrapper(N, sub_repeats=1000, func='det')
 # for N in Ns:

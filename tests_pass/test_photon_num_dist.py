@@ -21,7 +21,7 @@ plt.figure(0)
 plt.bar(n, p_n)
 
 
-p_total = total_displaced_squeezed_vacuum(r, beta, K, cutoff)
+p_total = total_displaced_squeezed_vacuum(r, beta, cutoff)
 
 N_total_approx = np.sum(p_total * n)
 N_total = K * N

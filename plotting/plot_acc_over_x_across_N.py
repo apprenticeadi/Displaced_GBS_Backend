@@ -4,7 +4,7 @@ from scipy.special import comb, factorial
 import os
 import datetime
 
-from src.utils import DFUtils
+from src.utils import DFUtils, DGBSUtils
 from src.photon_number_distributions import big_F
 
 
@@ -19,11 +19,8 @@ def prefactor(_N, _func):
             return 0
 
     elif _func[:4] == 'lhaf':
-        if _func[_func.index('w') + 2 : _func.index('w') + 4] == "N^":
-            exponent_on_N = float(_func[_func.index('w') + 4:])
-            w = _N ** exponent_on_N
-        else:
-            w = float(_func[_func.index('w') + 2:])
+        w_label = _func[5:]
+        w = DGBSUtils.read_w_label(w_label, _N)
         # return np.sqrt(np.power(2., float(_N)) / factorial(_N) / big_F(w, _N, _N)[_N])
         return np.sqrt( np.power(2., float(_N)) * comb(_N**2, _N) / big_F(w, _N, _N)[_N] / np.power(float(_N), 2*float(_N)) )
 
@@ -195,7 +192,7 @@ def func_labels(func_string):
 repeats_list = [10000, 100000]
 
 # funcs = ['perm', 'det', 'haf', 'lhaf_w=N^-1', 'lhaf_w=0.1', 'lhaf_w=0.01', 'lhaf_w=1']
-funcs = ['perm', 'det', 'haf', 'lhaf_w=0.1', 'lhaf_w=1', 'lhaf_w=N^0.25']
+funcs = ['perm', 'det', 'haf', 'lhaf_w=0.1', 'lhaf_w=1', 'lhaf_w=5', 'lhaf_w=N^0.25', 'lhaf_w=0.1N^0.25']
 # funcs = ['lhaf_w=1', 'lhaf_w=N^0.25']
 
 # xs_toplot = [1., 0.75, 0.56, 0.42, 0.32, 0.24, 0.18, 0.13]  # for cumulative distribution function
@@ -285,22 +282,22 @@ for i_func, func in enumerate(funcs):
 
 
     # <<<<<<<<<<<<<<<<<<< Plot F(N, epsilon) against N for different functions  >>>>>>>>>>>>>>>>>>
-    x_id = -1
+    x_id = 1
     x_special = xs_toplot[x_id]
     plt.figure(fr'$F(N, \alpha={x_special:.3})$ for different functions')
 
-    plt.plot(Ns, 1 - cum_distrib[:, x_id], 'x', color=cycle[i_func])
-    plt.text(Ns[-1]+1, 0.9 - 0.9 * cum_distrib[-1, x_id], func_labels(func), color=cycle[i_func] )
+    plt.plot(Ns, 1 - cum_distrib[:, x_id], 'x', color=cycle[i_func], label=func_labels(func))
+    # plt.text(Ns[-1]+1, 0.9 - 0.9 * cum_distrib[-1, x_id], func_labels(func), color=cycle[i_func] )
 
 plt.figure(fr'$F(N, \alpha={x_special:.3})$ for different functions')
 plt.xlabel(r'$N$')
 plt.ylabel(fr'$1-F(N,\alpha={x_special:.3})$')
-plt.xscale('log')
+plt.xscale('linear')
 plt.xlim([6, 55])
 plt.yscale('log')
 plt.figure(fr'$F(N, \alpha={x_special:.3})$ for different functions').set_figwidth(8)
 plt.figure(fr'$F(N, \alpha={x_special:.3})$ for different functions').set_figheight(5)
-# plt.legend()
+plt.legend()
 # plt.title(fr'$1 - F(N, \alpha={x_special})$ for different functions')
 
 if save_fig:

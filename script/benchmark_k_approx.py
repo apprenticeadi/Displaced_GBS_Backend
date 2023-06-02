@@ -16,20 +16,20 @@ from src.utils import LogUtils, DFUtils, DGBSUtils
 
 
 Ns = np.arange(4, 20, step=1)
-w_labels = ['w=1N^0.25', 'w=3.7N^0.25', 'w=0.09N^0.25']
+w_labels = ['w=1', 'w=5.2N^0.25', 'w=10.5N^0.25']
 ks = np.asarray([0, 1, 2, 3])
 max_num_outputs = 100
 
 
-# plt.figure('runtime comparison')
-# plt.plot(np.power(2, Ns), label=r'$2^N$')
-# for k in range(1, 4):
-#     plt.plot(comb(Ns, 2*k) * np.power(2, 2*k), label=rf'$k={{{k}}}$')
-#
-# plt.xlabel('N')
-# plt.ylabel('runtime')
-# plt.legend()
-# plt.yscale('log')
+plt.figure('runtime comparison')
+plt.plot(np.power(2, Ns), label=r'$2^N$')
+for k in range(1, 4):
+    plt.plot(comb(Ns, 2*k) * np.power(2, 2*k), label=rf'$k={{{k}}}$')
+
+plt.xlabel('N')
+plt.ylabel('runtime')
+plt.legend()
+plt.yscale('log')
 
 # <<<<<<<<<<<<<<<<<<< Logging  >>>>>>>>>>>>>>>>>>
 time_stamp = datetime.datetime.now().strftime("%d-%m-%Y(%H-%M-%S.%f)")
