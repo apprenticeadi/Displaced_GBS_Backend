@@ -275,6 +275,7 @@ class DGBSUtils:
 
     @staticmethod
     def read_w_label(w_label, N):
+        """Read labels such as 'w=1', 'w=2.3N^0.25' etc. """
         if 'N' in w_label:
 
             if w_label.index('=') + 1 == w_label.index('N'):
