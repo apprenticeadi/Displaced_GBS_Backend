@@ -8,7 +8,7 @@ import datetime
 
 from src.utils import DGBSUtils, LogUtils, DFUtils
 
-Ns = np.linspace(10, 500, num=20, dtype=int)
+Ns = np.array([100, 400])
 Ms = Ns
 w_labels = ['w=0.01', 'w=0.1', 'w=0.2', 'w=0.5']
 
@@ -74,3 +74,4 @@ plt.figure('Bounded probability')
 for i_w, w_label in enumerate(w_labels):
     plt.plot(Ns, probs[:, i_w], 'x', label=w_label)
 plt.legend()
+plt.xticks(Ns)
