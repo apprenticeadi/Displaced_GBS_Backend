@@ -9,9 +9,9 @@ import time
 from src.utils import MatrixUtils
 # <<<<<<<<<<<<<<<<<<< Size  >>>>>>>>>>>>>>>>>>
 M = 100
-N = 100
+N = 10
 K = N
-w = 0.2  # The diagonal weight.
+w = 5  # The diagonal weight.
 print(f'M={M}, N={N}, K={K}')
 print(f'w={w}')
 

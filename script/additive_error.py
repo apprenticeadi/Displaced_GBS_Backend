@@ -9,8 +9,9 @@ from src.photon_number_distributions import big_F
 plt.rcParams.update({'font.size':14})
 cycle = plt.rcParams['axes.prop_cycle'].by_key()['color']
 
-Ns = np.arange(start=2, stop=41, dtype=float)
-w_labels = ['0', '0.1', '1', '2', 'N^0.5', 'N^1']
+Ns = np.arange(start=2, stop=51, dtype=float)
+w_labels = ['0', '0.1', '1', '2', 'N^0.5']
+# w_labels = ['N^0.5']
 # w_labels=['0']
 # w_labels = ['N^-1', '0.01', '0.1', '1', '2', '5', '10', 'N^1']
 
@@ -68,7 +69,7 @@ for i in range(len(w_labels)):
         else:
             plt.text(Ns[-1] * 0.9, error[-1] * 1e5, w_string, color=cycle[i])
 
-plt.ylim([1e-70, 1e70])
+plt.ylim([1e-100, 1e70])
 plt.yscale('log')
 # plt.legend(loc='lower left')
 plt.xlabel(r'$N$')
