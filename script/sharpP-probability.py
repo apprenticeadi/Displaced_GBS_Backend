@@ -8,7 +8,7 @@ import datetime
 
 from src.utils import DGBSUtils, LogUtils, DFUtils
 
-Ns = np.array([100, 400])
+Ns = np.array([225])
 Ms = Ns
 w_labels = ['w=0.01', 'w=0.1', 'w=0.2', 'w=0.5']
 
@@ -32,7 +32,7 @@ probs = np.zeros((len(Ns), len(w_labels)), dtype=np.float64)
 
 for i_N, N in enumerate(Ns):
     M = Ms[i_N]
-    K = N
+    K = M
     lower_bound = 1 / (4 * (N - 2))
 
     dir_N = dir + fr'\N={N}_K={K}_M={M}'
