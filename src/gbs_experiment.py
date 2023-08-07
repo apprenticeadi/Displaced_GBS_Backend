@@ -267,8 +267,7 @@ class sudGBS(PureGBS):
         return adj.astype(int)
 
     def generate_weighted_adj(self):
-        """Generates adjacency matrix for weighted loopless graph on which we calculate the matching polynomial,
-        in other words this is the edge activities matrix x"""
+        """This is tilde B matrix"""
 
         B = self.calc_B()
         B = MatrixUtils.filldiag(B, np.zeros(self.M))
