@@ -3,12 +3,12 @@ import numpy as np
 
 from src.utils import  DFUtils
 
-Ns = np.arange(4, 20, step=1)
-w_label='w=5.2N^0.25'
-output_num = 100
-ks = [0, 1, 2, 3]
+Ns = np.arange(10, 19, step=1)
+w_label='w=1.207'
+output_num = 1000
+ks = [0, 1, 2, 3, 4, 5]
 
-save_fig=True
+save_fig=False
 
 results_dir = fr'..\Results\benchmark_k_approx\{w_label}_{output_num}outputs'
 
@@ -44,7 +44,7 @@ for i_k, k in enumerate(ks):
 plt.legend()
 plt.xlabel('N')
 plt.ylabel('Mean relative error')
-plt.ylim(0, 5)
+plt.ylim(0, 1)
 plt.title(f'Accuracy of k-th order approximation for {w_label}')
 
 if save_fig:

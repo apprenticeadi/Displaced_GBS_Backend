@@ -15,34 +15,45 @@ from src.gbs_experiment import sduGBS
 from src.utils import LogUtils, DFUtils, DGBSUtils
 
 
-Ns = np.arange(4, 20, step=1)
-w_labels = ['w=1', 'w=5.2N^0.25', 'w=10.5N^0.25']
-ks = np.asarray([0, 1, 2, 3])
-max_num_outputs = 100
+Ns = np.arange(10, 19, step=1)
+ks = np.asarray([0, 1, 2, 3, 4, 5])
+max_num_outputs = 1000
 
+ratios = [9]  # displacement over squeezing ratio
+mean_photon_per_mode = 1.
 
-plt.figure('runtime comparison')
-plt.plot(np.power(2, Ns), label=r'$2^N$')
-for k in range(1, 4):
-    plt.plot(comb(Ns, 2*k) * np.power(2, 2*k), label=rf'$k={{{k}}}$')
-
-plt.xlabel('N')
-plt.ylabel('runtime')
-plt.legend()
-plt.yscale('log')
+# plt.figure('ln runtime comparison')
+# plt.plot(Ns * np.log(2), label='exact')
+# for k in range(1, 6):
+#     plt.plot(np.log(comb(Ns, 2*k)) + 2*k*np.log(2), label=rf'$k={{{k}}}$')
+#
+# plt.xlabel('N')
+# plt.ylabel('ln(runtime)')
+# plt.legend()
 
 # <<<<<<<<<<<<<<<<<<< Logging  >>>>>>>>>>>>>>>>>>
 time_stamp = datetime.datetime.now().strftime("%d-%m-%Y(%H-%M-%S.%f)")
 LogUtils.log_config(time_stamp=time_stamp, filehead='benchmark_k_approx', module_name='', level=logging.INFO)
-logging.info(f'Benchmark k-th order approximation for N={Ns}, {w_labels} and k={ks}. The maximum number of outputs '
-             f'for which the lhaf is calculated is capped by {max_num_outputs}. ')
+logging.info(f'Benchmark k-th order approximation for N={Ns}, k={ks}, N_dis/N_sq ratio = {ratios}. '
+             f'The maximum number of outputs for which the lhaf is calculated is capped by {max_num_outputs}. ')
 
-for w_label in w_labels:
+t_initial = time.time()
+for ratio in ratios:
+    N_sq = mean_photon_per_mode / (ratio + 1)  # sinh^2(r)
+    r = np.arcsinh(np.sqrt(N_sq))
+    N_dis = ratio * N_sq
+    beta = np.sqrt(N_dis)
+
+    w = DGBSUtils.calc_w(r, beta)
+    w_label = fr'w={w:.3f}'
+
     results_dir = rf'..\Results\benchmark_k_approx\{w_label}_{max_num_outputs}outputs'
+
+    logging.info(f'N_dis/N_sq ratio={ratio}, w={w}, r={r}, beta={beta}')
 
     for i_N, N in enumerate(Ns):
 
-        w = DGBSUtils.read_w_label(w_label, N)
+        # w = DGBSUtils.read_w_label(w_label, N)
 
         # <<<<<<<<<<<<<<<<<<< Design Experiment  >>>>>>>>>>>>>>>>>>
         M = N ** 2
@@ -52,7 +63,15 @@ for w_label in w_labels:
         results_N_dir = results_dir + fr'\N={N}_M={M}_K={K}_{time_stamp}'
 
         experiment = sduGBS(M)
-        r, beta = experiment.create_d_gbs(K, N, w, U)
+
+        # r, beta = experiment.create_d_gbs(K, N, w, U)
+
+        rs = np.concatenate([r * np.ones(K), np.zeros(M-K)])
+        betas = np.concatenate([beta * np.ones(K), np.zeros(M-K)])
+        experiment.add_squeezing(rs)
+        experiment.add_displacement(betas)
+        experiment.add_interferometer(U)
+
         B = experiment.calc_B()
         gamma = experiment.calc_half_gamma()
 
@@ -65,8 +84,7 @@ for w_label in w_labels:
         lhaf_exact = np.zeros(num_outputs, dtype=np.complex128)
         lhaf_approx = np.zeros((num_outputs, len(ks)), dtype=np.complex128)  # Each column corresponds to a k-value
 
-        logging.info(f'Generate experiment for M={M}, K=N={N}, r={r}, beta={beta}. '
-                     f'Calculate lHaf for {num_outputs} outputs.')
+        logging.info(f'Generate experiment for M={M}, K=N={N}. Calculate lHaf for {num_outputs} outputs.')
 
         # <<<<<<<<<<<<<<<<<<< Calculate lhafs  >>>>>>>>>>>>>>>>>>
         for i in range(num_outputs):
@@ -79,8 +97,6 @@ for w_label in w_labels:
 
             outputs[i] = output_ports
             t1 = time.time()
-
-            logging.info(f'{i}-th output={output_ports}, generate output time={t1-t0}')
 
             B_n = B[output_ports][:, output_ports]
             gamma_n = gamma[output_ports]
@@ -97,10 +113,14 @@ for w_label in w_labels:
                 lhaf_approx[i, i_k] = lhaf_value
 
             t2 = time.time()
-            logging.info(f'Calc loop Hafnians time ={t2-t1}')
+            logging.info(f'{i}-th output={output_ports}, calc loop Hafnians time ={t2-t1}')
 
         # <<<<<<<<<<<<<<<<<<< Save lhaf results  >>>>>>>>>>>>>>>>>>
         np.save(results_N_dir + '\outputs.npy', outputs)
         np.save(results_N_dir + '\k=exact.npy', lhaf_exact)
         for i_k, k in enumerate(ks):
             np.save(results_N_dir + f'\k={k}.npy', lhaf_approx[:, i_k])
+
+t_final = time.time()
+
+print(f'Total time = {t_final - t_initial}')
