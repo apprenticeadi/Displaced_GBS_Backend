@@ -6,7 +6,7 @@ from src.utils import MatrixUtils
 import networkx as nx
 
 
-N = 4
+N = 5
 mean = 0
 stddev = 1 / np.sqrt(2)
 
@@ -14,7 +14,7 @@ stddev = 1 / np.sqrt(2)
 X = np.random.normal(mean, stddev, (N,N)) + 1j * np.random.normal(mean, stddev, (N,N))
 tildeX = (X @ X.T) / np.outer(np.sum(X, axis=1), np.sum(X, axis=1))
 
-adjacency_matrix = MatrixUtils.filldiag(tildeX, np.ones(4))
+adjacency_matrix = MatrixUtils.filldiag(tildeX, np.ones(N))
 lhaf_val = hafnian(adjacency_matrix, loop=True)
 print(lhaf_val)
 
