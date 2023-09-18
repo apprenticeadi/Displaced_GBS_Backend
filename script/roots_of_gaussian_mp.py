@@ -22,6 +22,25 @@ def generate_tildeX(N, repeats, mean=0, stddev=1/np.sqrt(2)):
 
     return tildeXs
 
+def generate_X(N, repeats, mean=0, stddev=1/np.sqrt(2)):
+
+    Xs = np.zeros((repeats, N, N), dtype = np.complex128)
+    for i in range(repeats):
+        X = np.random.normal(mean, stddev, (N,N)) + 1j * np.random.normal(mean, stddev, (N,N))
+        Xs[i, :, :] = X
+
+    return Xs
+
+def generate_symX(N, repeats, mean=0, stddev=1/np.sqrt(2)):
+
+    symXs = np.zeros((repeats, N,N), dtype=np.complex128)
+    for i in range(repeats):
+        X = np.random.normal(mean, stddev, (N,N)) + 1j * np.random.normal(mean, stddev, (N,N))
+        symX = X @ X.T
+
+        symXs[i, :, :] = symX
+
+    return symXs
 
 @numba.njit(parallel=True)
 def find_roots(coeffs):
@@ -37,11 +56,13 @@ def find_roots(coeffs):
 
 
 # <<<<<<<<<<<<<<<<<<< Basic Parameters  >>>>>>>>>>>>>>>>>>
-Ns = np.arange(4, 15)
+Ns = [20] # np.arange(4, 16)
 mean = 0
-stddev = 1 / np.sqrt(2)
-repeats = 10000
+stddev = 1 # 1 / np.sqrt(2)
+repeats = 1
 roots_dict = {}
+distrib = 'tilde_gaussian' # 'sym_gaussian' # 'gaussian'  # 'tilde_gaussian'
+
 save_fig = True
 min_roots = np.zeros(len(Ns), dtype=float)
 max_roots = np.zeros(len(Ns), dtype=float)
@@ -52,8 +73,8 @@ time_stamp = datetime.datetime.now().strftime("%Y-%m-%d(%H-%M-%S.%f)")
 results_dir = fr'..\Results\roots_matching_polynomial\{repeats}rep_{time_stamp}'
 LogUtils.log_config(time_stamp='', dir=results_dir, filehead='log', module_name='', level=logging.INFO)
 
-logging.info(f'In this script, I calculate the zeros of f(z)=lhaf(tildeX z, 1), where tildeX is an N*N matrix defined '
-             f'as tildeX_ij = (XX^T)_ij / (sum_k X_ik)(sum_l X_jl), for i.i.d Gaussian X with mean={mean} and stddev of'
+logging.info(f'In this script, I calculate the zeros of f(z)=lhaf(A z, 1), where A is {distrib} distribution '
+             f'defined using i.i.d Gaussians with mean={mean} and stddev of'
              f'real (imaginary) part = {stddev}. N taken from Ns={Ns}. For each N, tildeX is generated for '
              f'repeats={repeats} times, and int(N/2) roots are calculated for each tildeX. ')
 logging.info(f'The tildeXs are stored as [repeats, N, N] arrays, the matching polynomial coefficients are stored as'
@@ -64,9 +85,18 @@ logging.info(f'The tildeXs are stored as [repeats, N, N] arrays, the matching po
 for i_N, N in enumerate(Ns):
 
     k_max = int(N / 2)  # maximum degree of matching polynomial, also number of roots
-    tildeXs = generate_tildeX(N, repeats, mean=mean, stddev=stddev)
 
-    np.save(DFUtils.create_filename(results_dir + fr'\raw\N={N}_tildeXs.npy'), tildeXs)
+    if distrib == 'tilde_gaussian':
+        As = generate_tildeX(N, repeats, mean=mean, stddev=stddev)
+    elif distrib == 'gaussian':
+        As = generate_X(N, repeats, mean=mean, stddev=stddev)
+    elif distrib == 'sym_gaussian':
+        As = generate_symX(N, repeats, mean=mean, stddev=stddev)
+    else:
+        raise ValueError(f'distribution {distrib} not recognized')
+
+
+    np.save(DFUtils.create_filename(results_dir + fr'\raw\N={N}_tildeXs.npy'), As)
 
     coeffs = np.zeros((repeats, k_max + 1), dtype=np.complex128)
     coeffs[:, 0] = 1
@@ -82,10 +112,12 @@ for i_N, N in enumerate(Ns):
         k = len(clique)
         cs = np.ones(repeats, dtype=np.complex128)
         for node in clique:
-            cs = cs * tildeXs[:, node[0], node[1]]
+            cs = cs * As[:, node[0], node[1]]
 
         coeffs[:, k] += cs
     t2 = time.time()
+
+    logging.info(f'N={N}, time={t2 - t1} to construct {repeats} matching polynomials')
 
     np.save(DFUtils.create_filename(results_dir + fr'\raw\N={N}_mp_coeffs.npy'), coeffs)
 
@@ -98,6 +130,7 @@ for i_N, N in enumerate(Ns):
     # print(np.allclose(np.sum(coeffs, axis=1), lhaf_vals))
 
     roots_N = find_roots(coeffs)
+    t3 = time.time()
 
     roots_dict[N] = roots_N
 
@@ -110,10 +143,10 @@ for i_N, N in enumerate(Ns):
 
     np.save(DFUtils.create_filename(results_dir + fr'\N={N}_roots.npy'), roots_N)
 
-    logging.info(f'N={N}, time={t2 - t1} for {repeats} repeats, min|root|={min_root}')
+    logging.info(f'N={N}, time={t3 - t2} for to find roots for {repeats} matching polynomials')
 
 
-
+np.save(results_dir + fr'\median_abs_roots.npy', median_roots)
 np.save(results_dir + fr'\min_abs_roots.npy', min_roots)
 np.save(results_dir + fr'\max_abs_roots.npy', max_roots)
 
@@ -161,10 +194,10 @@ for i_N, N in enumerate(Ns):
     plt.xlabel('Real')
     plt.ylabel('Imaginary')
 
-    plt.show()
-
     if save_fig:
         plt.savefig(DFUtils.create_filename(save_name))
+
+    plt.show()
 
 
 plt.figure('min and max |root|')
@@ -177,3 +210,5 @@ plt.yscale('log')
 plt.legend()
 if save_fig:
     plt.savefig(DFUtils.create_filename(results_dir + r'\plots\min_and_max_root.png'))
+
+plt.show()
