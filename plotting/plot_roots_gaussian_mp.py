@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+from matplotlib import patches
 import numpy as np
 from scipy.stats import bootstrap
 from src.utils import DFUtils, DGBSUtils
@@ -8,6 +9,7 @@ import time
 total_Ns = list(range(4, 17))
 reps = 10000
 
+# <<<<<<<<<<<<<<<<<<< Basic parameters  >>>>>>>>>>>>>>>>>>
 Ns_dir_dict = {
     rf'..\Results\roots_matching_polynomial\{reps}rep_2023-08-23(18-00-43.689530)': list(range(4, 15)),
     rf'..\Results\roots_matching_polynomial\{reps}rep_2023-08-23(19-35-17.526866)': [15],
@@ -18,6 +20,7 @@ save_fig = True
 time_stamp = datetime.datetime.now().strftime("%Y-%m-%d(%H-%M-%S.%f)")
 plot_dir = fr'..\Plots\roots_mp\tildeX_distrib_{time_stamp}'
 
+# <<<<<<<<<<<<<<<<<<< Reading raw data  >>>>>>>>>>>>>>>>>>
 def find_quart(a, axis=0):
     return np.quantile(a, 0.25, axis=axis)
 
@@ -62,7 +65,7 @@ for results_dir in Ns_dir_dict.keys():
 np.save(DFUtils.create_filename(plot_dir + f'\median_min_roots_mp.npy'), median_min_roots)
 np.save(plot_dir + f'\quart_min_roots_mp.npy', quart_min_roots)
 
-# <<<<<<<<<<<<<<<<<<< Plotting  >>>>>>>>>>>>>>>>>>
+# <<<<<<<<<<<<<<<<<<< Plot for each N  >>>>>>>>>>>>>>>>>>
 log_linthresh = -4
 linthresh = 10 ** (log_linthresh)
 axis_log_lim = 1
@@ -122,7 +125,7 @@ for i_N, N in enumerate(total_Ns):
     if save_fig:
         plt.savefig(DFUtils.create_filename(save_name))
 
-
+# <<<<<<<<<<<<<<<<<<< Plot median w  >>>>>>>>>>>>>>>>>>
 plt.figure('medians')
 
 plt.errorbar(total_Ns, median_min_roots[:, 0], yerr=median_min_roots[:, 1:].T, fmt='x', color='black', linestyle='None', label='median')
@@ -133,7 +136,7 @@ plt.legend()
 if save_fig:
     plt.savefig(DFUtils.create_filename(plot_dir + r'\medians.pdf'))
 
-# Colour plot
+# <<<<<<<<<<<<<<<<<<< Plot success probability colour plot  >>>>>>>>>>>>>>>>>>
 w_max = 5.000
 w_min = 0.0001
 ws = np.linspace(w_min, w_max, 10000)
@@ -145,9 +148,9 @@ for i_eps, epsilon in enumerate(epsilons):
     counts = np.sum(abs_min_roots <= epsilon, axis=1)
     color_mesh[:, i_eps] = counts / reps
 
-plt.figure('color plot Pr(hit a zero)')
+plt.figure('color plot Pr(non zero)')
 plt.pcolormesh(np.concatenate([[2 * ws[-1] - ws[-2]], ws[::-1]]), np.arange(min(total_Ns), max(total_Ns) + 2) - 0.5,
-               color_mesh, vmin=0, vmax=1)
+               1- color_mesh, vmin=0, vmax=1)
 plt.colorbar()
 plt.xlabel(r'$|w|$')
 plt.ylabel(r'$N$')
@@ -174,7 +177,9 @@ for i_N in range(len(quart_min_roots)):
 plt.errorbar(quart_ws, total_Ns, xerr=quart_ws_err, fmt='x', color='red', linestyle='None')  # this is 25%
 
 if save_fig:
-    plt.savefig(DFUtils.create_filename(plot_dir + r'\color_mesh_prob_hit_a_zero.pdf'))
+    plt.savefig(DFUtils.create_filename(plot_dir + r'\color_mesh_prob_non_zero.pdf'))
+
+# <<<<<<<<<<<<<<<<<<< Plot photon number ratio  >>>>>>>>>>>>>>>>>>
 
 
 def solve_photon_ratio(w, lower_err, upper_err):
@@ -207,4 +212,100 @@ if save_fig:
     plt.savefig(DFUtils.create_filename(plot_dir + r'\photon_ratios.pdf'))
 
 
+# <<<<<<<<<<<<<<<<<<< Plot subfigures for writeup  >>>>>>>>>>>>>>>>>>
 
+fontsize = 14
+fig = plt.figure('cluster truncation success prob', layout='constrained', figsize=(5,8))
+subfigs=fig.subfigures(2, 1)
+axup = subfigs[0].subplots(1, 1)
+pc = axup.pcolormesh(np.concatenate([[2 * ws[-1] - ws[-2]], ws[::-1]]), np.arange(min(total_Ns), max(total_Ns) + 2) - 0.5, 1 - color_mesh, vmin=0, vmax=1)
+subfigs[0].colorbar(pc, shrink=0.6, ax=axup, location='bottom', aspect=30)
+
+axup.set_xlabel(r'$|w|$', fontsize=fontsize)
+axup.set_ylabel(r'$N$', fontsize=fontsize)
+axup.set_ylim([min(total_Ns) - 0.5, max(total_Ns) + 0.5])
+axup.set_yticks(total_Ns[::2], fontsize=fontsize-2)
+axup.set_xticks(np.arange(5)+1, fontsize=fontsize-2)
+axup.set_xlim([min(ws), max(ws)])
+axup.set_title('(a)', loc='left')
+for N in total_Ns:
+    axup.axhline(N - 0.5, xmin=0, xmax=w_max, color='white', linestyle=':')
+axup.errorbar(med_ws, total_Ns, xerr=med_ws_err, fmt='x', color='black', linestyle='None')  # this is 50%
+axup.errorbar(quart_ws, total_Ns, xerr=quart_ws_err, fmt='x', color='red', linestyle='None')  # this is 25%
+
+axbottom = subfigs[1].subplots(1,1)
+axbottom.errorbar(total_Ns, med_ratios[:, 0], yerr=med_ratios[:, 1:].T, fmt='x', color='black', linestyle='None')
+axbottom.errorbar(total_Ns, quart_ratios[:, 0], yerr=quart_ratios[:, 1:].T, fmt='x', color='red', linestyle='None')
+axbottom.set_ylabel(r'$|\beta|^2/\sinh^2(r)$', fontsize=fontsize)
+axbottom.set_xlabel(r'$N$', fontsize=fontsize)
+axbottom.set_xticks(total_Ns[::2], fontsize=fontsize-2)
+axbottom.set_yticks([50, 100, 150, 200, 250], fontsize=fontsize-2)
+axbottom.set_title('(b)', loc='left')
+axbottom.set_ylim([0, 250])
+
+if save_fig:
+    plt.savefig(DFUtils.create_filename(plot_dir + r'\cluster_truncation_success_probs.pdf'))
+
+
+# <<<<<<<<<<<<<<<<<<< Plot root distribution subplots   >>>>>>>>>>>>>>>>>>
+axis_ticks = np.array([-1., -1e-3, 0, 1e-3, 1])
+spine_alpha = 0.5
+axis_alpha = 0.8
+
+fig = plt.figure('Root distribution subplots', layout='constrained')
+gs = fig.add_gridspec(2,2, hspace=0.1, wspace=0.1)
+axs = gs.subplots(sharex='col', sharey='row').flatten()
+N_toplot = np.array([4, 8, 12, 16])
+title_label = ['(a)', '(b)', '(c)', '(d)']
+
+for i_N_t, N in enumerate(N_toplot):
+
+    i_N = total_Ns.index(N)
+    ax = axs[i_N_t]
+
+    # Create a scatter plot in the complex plane
+    roots_real = [np.real(r) for r in min_roots[i_N]]
+    roots_imag = [np.imag(r) for r in min_roots[i_N]]
+
+    # spines less transparent
+    ax.spines['top'].set_alpha(spine_alpha)
+    ax.spines['bottom'].set_alpha(spine_alpha)
+    ax.spines['left'].set_alpha(spine_alpha)
+    ax.spines['right'].set_alpha(spine_alpha)
+
+    # # Create solid lines for the real and imaginary axes
+    ax.axhline(0, color='black', linewidth=1, alpha=axis_alpha)  # Real axis
+    ax.axvline(0, color='black', linewidth=1, alpha=axis_alpha)  # Imaginary axis
+
+    # Scatter plot roots
+    ax.scatter(roots_real, roots_imag, marker='x', s=10)
+
+    # create circular boundary of median roots
+    median_root = median_min_roots[i_N, 0]
+    circle_median = patches.Circle((0, 0), median_root, color='black', fill=False, label=fr'$|z|={{{median_root:.3f}}}$')
+    ax.add_patch(circle_median)
+
+    quart_root = quart_min_roots[i_N, 0]
+    circle_quart = patches.Circle((0, 0), quart_root, color='red', fill=False, label=fr'$|z|={{{quart_root:.3f}}}$')
+    ax.add_patch(circle_quart)
+
+    print(fr'N={N}, median_root={median_root}, quart_root={quart_root}')
+
+    ax.set_xscale('symlog', linthresh=linthresh)
+    ax.set_yscale('symlog', linthresh=linthresh)
+
+    # Set axes
+    ax.set_xlim(-axis_lim, axis_lim)
+    ax.set_ylim(-axis_lim, axis_lim)
+    ax.set_xticks(axis_ticks, fontsize=fontsize-2)
+    ax.set_yticks(axis_ticks, fontsize=fontsize-2)
+
+    ax.set_xlabel(f'N={N}', fontsize=fontsize-2)
+
+    ax.set_title(fr'{title_label[i_N_t]}', fontsize=fontsize-2, loc='left')
+
+fig.supxlabel(r'Re$(z)$', fontsize=fontsize)
+fig.supylabel(r'Im$(z)$', fontsize=fontsize)
+
+if save_fig:
+    plt.savefig(DFUtils.create_filename(plot_dir + r'\min_root_subfigs.pdf'))
