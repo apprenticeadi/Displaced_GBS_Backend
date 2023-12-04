@@ -11,7 +11,7 @@ from src.utils import MatrixUtils
 M = 100
 N = 10
 K = N
-w = 5  # The diagonal weight.
+w = 0.1  # The diagonal weight.
 print(f'M={M}, N={N}, K={K}')
 print(f'w={w}')
 
@@ -34,38 +34,38 @@ abs_x = np.absolute(x_n)
 sum_x = np.sum(abs_x, axis=1)  # this doesn't contain all possible sum tilde x
 
 axis_lim = 1e3
-#
-# plt.figure(r'Plot of $|\tilde\{X\}_ij|$' + f'for M={M}, w={w}')
-# plt.axhline(y=0, xmin=-axis_lim, xmax=axis_lim, color='black')
-# plt.axvline(x=0, ymin=-axis_lim, ymax=axis_lim, color='black')
-# circle1 = plt.Circle((0,0), 1, color='r', alpha=0.5, label='Radius 1')
-# circle2 = plt.Circle((0,0), 1/(4 * (N-2)), color='yellow', alpha=1, label='Radius $1/4(N-2)$')
-# # circle3 = plt.Circle((0,0), 1/N**4, color='orange', alpha=1, label='Radius 1/N**4')
-# plt.gca().add_patch(circle1)
-# plt.gca().add_patch(circle2)
-# # plt.gca().add_patch(circle3)
-# plt.scatter(masked_x.real, masked_x.imag, marker='.')
-# plt.xlim(left=-axis_lim, right=axis_lim)
-# plt.ylim(bottom=-axis_lim, top=axis_lim)
-# plt.yscale('symlog', linthresh = 10**np.floor(np.log10(1/N**2)))
-# plt.xscale('symlog', linthresh = 10**np.floor(np.log10(1/N**2)))
-# plt.legend()
-# plt.title(r'Scatter plot of $\tilde{X}_{ij}$' + f'for M={M}, w={w}')
-#
-# plt.figure(f'Plot of sum |x| for M={M}, w={w}')
-# plt.axhline(y=0, xmin=-axis_lim, xmax=axis_lim, color='black')
-# plt.axvline(x=0, ymin=-axis_lim, ymax=axis_lim, color='black')
-# circle1 = plt.Circle((0,0), 1, color='r', alpha=0.5, label='Radius 1')
-# circle2 = plt.Circle((0,0), 1/N, color='yellow', alpha=1, label='Radius 1/N')
-# plt.gca().add_patch(circle1)
-# plt.gca().add_patch(circle2)
-# plt.scatter(sum_x.real, sum_x.imag, marker='.')
-# plt.xlim(left=-axis_lim, right=axis_lim)
-# plt.ylim(bottom=-axis_lim, top=axis_lim)
-# plt.yscale('symlog', linthresh = 10**np.floor(np.log10(1/N)))
-# plt.xscale('symlog', linthresh = 10**np.floor(np.log10(1/N)))
-# plt.legend()
-# plt.title(r'Scatter plot of  $\sum_{col} \tilde{X}_{ij}$' + f'for M={M}, w={w}')
+
+plt.figure(r'Plot of $|\tilde\{X\}_ij|$' + f'for M={M}, w={w}')
+plt.axhline(y=0, xmin=-axis_lim, xmax=axis_lim, color='black')
+plt.axvline(x=0, ymin=-axis_lim, ymax=axis_lim, color='black')
+circle1 = plt.Circle((0,0), 1, color='r', alpha=0.5, label='Radius 1')
+circle2 = plt.Circle((0,0), 1/(4 * (N-2)), color='yellow', alpha=1, label='Radius $1/4(N-2)$')
+# circle3 = plt.Circle((0,0), 1/N**4, color='orange', alpha=1, label='Radius 1/N**4')
+plt.gca().add_patch(circle1)
+plt.gca().add_patch(circle2)
+# plt.gca().add_patch(circle3)
+plt.scatter(masked_x.real, masked_x.imag, marker='.')
+plt.xlim(left=-axis_lim, right=axis_lim)
+plt.ylim(bottom=-axis_lim, top=axis_lim)
+plt.yscale('symlog', linthresh = 10**np.floor(np.log10(1/N**2)))
+plt.xscale('symlog', linthresh = 10**np.floor(np.log10(1/N**2)))
+plt.legend()
+plt.title(r'Scatter plot of $\tilde{X}_{ij}$' + f'for M={M}, w={w}')
+
+plt.figure(f'Plot of sum |x| for M={M}, w={w}')
+plt.axhline(y=0, xmin=-axis_lim, xmax=axis_lim, color='black')
+plt.axvline(x=0, ymin=-axis_lim, ymax=axis_lim, color='black')
+circle1 = plt.Circle((0,0), 1, color='r', alpha=0.5, label='Radius 1')
+circle2 = plt.Circle((0,0), 1/N, color='yellow', alpha=1, label='Radius 1/N')
+plt.gca().add_patch(circle1)
+plt.gca().add_patch(circle2)
+plt.scatter(sum_x.real, sum_x.imag, marker='.')
+plt.xlim(left=-axis_lim, right=axis_lim)
+plt.ylim(bottom=-axis_lim, top=axis_lim)
+plt.yscale('symlog', linthresh = 10**np.floor(np.log10(1/N)))
+plt.xscale('symlog', linthresh = 10**np.floor(np.log10(1/N)))
+plt.legend()
+plt.title(r'Scatter plot of  $\sum_{col} \tilde{X}_{ij}$' + f'for M={M}, w={w}')
 
 
 

@@ -7,7 +7,7 @@ import logging
 from src.gbs_experiment import sduGBS
 from src.utils import RandomUtils, MatrixUtils, LogUtils
 
-M = 31
+M = 5
 depth = 5
 
 r = 0.1
@@ -39,8 +39,8 @@ logging.info('Finish calculating U matrix time={}'.format(datetime.datetime.now(
 np.save(dir + r'\U.npy', U)
 
 if M <=31:
-    fig0 = I.draw(show_params=False)
-    fig0.savefig(dir+r'\interferometer.pdf')
+    fig0 = I.draw(show_params=True)
+    fig0.savefig(dir+rf'\interferometer_M={M}_depth={depth}.png')
 
 # <<<<<<<<<<<<<<<<<<< Experiment  >>>>>>>>>>>>>>>>>>
 gbs.add_squeezing(rs)

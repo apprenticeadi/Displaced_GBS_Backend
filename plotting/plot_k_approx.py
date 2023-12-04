@@ -3,12 +3,12 @@ import numpy as np
 
 from src.utils import  DFUtils
 
-Ns = np.arange(10, 19, step=1)
-w_label='w=1.207'
+Ns = np.arange(6, 20, step=1)
+w_label='w=2.275'
 output_num = 1000
-ks = [0, 1, 2, 3, 4, 5]
+ks = [1, 2, 3]
 
-save_fig=False
+save_fig=True
 
 results_dir = fr'..\Results\benchmark_k_approx\{w_label}_{output_num}outputs'
 
@@ -41,11 +41,12 @@ for i_N, N in enumerate(Ns):
 plt.figure('mean relative error')
 for i_k, k in enumerate(ks):
     plt.plot(Ns, mean_rel_errs[:, i_k], label=f'k={k}')
-plt.legend()
+# plt.legend()
 plt.xlabel('N')
 plt.ylabel('Mean relative error')
-plt.ylim(0, 1)
-plt.title(f'Accuracy of k-th order approximation for {w_label}')
+# plt.ylabel(r'$\frac{|\mathregular{lHaf}_k(\mathbf{B}_{\mathbf{n}}, \mathbf{\gamma}_{\mathbf{n}}) - \mathregular{lHaf}(\mathbf{B}_{\mathbf{n}}, \mathbf{\gamma}_{\mathbf{n}})|}{\mathregular{lHaf}(\mathbf{B}_{\mathbf{n}}, \mathbf{\gamma}_{\mathbf{n}})}$')
+plt.ylim(-0.3, 2)
+# plt.title(f'Accuracy of k-th order approximation for {w_label}')
 
 if save_fig:
     plt.savefig(DFUtils.create_filename(results_dir + r'\Plots\Mean_relative_error.png'))
