@@ -6,13 +6,14 @@ from sympy.utilities.iterables import multiset_permutations
 import math
 import time
 import matplotlib.pyplot as plt
+from tqdm import tqdm
 
 from src.gbs_experiment import PureGBS, sudGBS, sduGBS
-from src.utils import LogUtils, DFUtils, RandomUtils
+from src.utils import LogUtils, DFUtils, RandomUtils, progressbar
 
 # <<<<<<<<<<<<<<<<<<< Basic parameters  >>>>>>>>>>>>>>>>>>
-Ms = [9, 12, 16, 20, 25]
-sq_dis_ratio = 1
+Ms = np.arange(9, 26)
+sq_dis_ratio = 12.55344 # 0.169 # 'infinite'
 alpha = 1  # the alpha in anti-concentration
 repeat = 1000
 
@@ -39,7 +40,7 @@ for iter, M in enumerate(Ms):
 
     N = np.sqrt(M)  # Mean photon number
     N_int = int(np.floor(N))  # find nearest smaller integer
-    K = N_int
+    K = M
     num_prob = math.comb(M, N_int)
     logging.info('')
     logging.info(f'For M={M}, mean photon N={N}, N of interest = {N_int}, K={K}, sq/dis ratio = {sq_dis_ratio}, num_prob={num_prob}')
@@ -47,18 +48,29 @@ for iter, M in enumerate(Ms):
     dir2 = dir + fr'\M={M}_N={N_int}_K={K}'
 
     # <<<<<<<<<<<<<<<<<<< Generate experiment  >>>>>>>>>>>>>>>>>>
-    beta = np.sqrt(N / (K * (sq_dis_ratio + 1)))
-    r = np.arcsinh(np.sqrt(sq_dis_ratio * beta ** 2))
+    if sq_dis_ratio == 'infinite':
+        displacement = False
+        beta = 0
+        r = np.arcsinh(np.sqrt(N/K))
+    else:
+        displacement = True
+        beta = np.sqrt(N / (K * (sq_dis_ratio + 1)))
+        r = np.arcsinh(np.sqrt(sq_dis_ratio * beta ** 2))
+
     betas = np.zeros(M)
     betas[:K] = beta
     rs = np.zeros(M)
     rs[:K] = r
-    logging.info(f'rs={rs}, betas={betas} in sdu model')
+
+    w = beta * (1-np.tanh(r)) / np.sqrt(np.tanh(r))
+    logging.info(f'w={w}, rs={rs}, betas={betas} in sdu model')
 
     all_displaced_probs = np.zeros((repeat, num_prob))
     all_displaced_probs_norm = np.zeros((repeat, num_prob))
     acc_betas = np.zeros(repeat)  # This is the fraction of probabilities above alpha/num_prob
-    for unitary_i in range(repeat):
+    tu_init = time.time()
+    # for unitary_i in tqdm(range(repeat)):
+    for unitary_i in progressbar(range(repeat), size=100):
 
         U = unitary_group.rvs(M)
 
@@ -70,14 +82,14 @@ for iter, M in enumerate(Ms):
         # <<<<<<<<<<<<<<<<<<< Calculate bunch of probabilities  >>>>>>>>>>>>>>>>>>
         base_outcome = [1] * N_int + [0] * (M - N_int)
         displaced_probs = np.zeros(num_prob)  # unnormalised |lhaf|^2
-        time_init = time.time()
+        # time_init = time.time()
         for i, outcome in enumerate(multiset_permutations(base_outcome)):
-            time1 = time.time()
-            lhaf2 = np.absolute(displaced_gbs.lhaf(outcome, displacement=True)) ** 2
-            time2 = time.time()
+            # time1 = time.time()
+            lhaf2 = np.absolute(displaced_gbs.lhaf(outcome, displacement=displacement)) ** 2
+            # time2 = time.time()
             displaced_probs[i] = lhaf2
             # print(f'Time = {time2 - time1}, lhaf**2 = {lhaf2:.3}')
-        time_final = time.time()
+        # time_final = time.time()
 
         # Normalise
         dis_total_prob = sum(displaced_probs)
@@ -91,21 +103,26 @@ for iter, M in enumerate(Ms):
         # <<<<<<<<<<<<<<<<<<< Write into data array  >>>>>>>>>>>>>>>>>>
         all_displaced_probs[unitary_i] = displaced_probs
         all_displaced_probs_norm[unitary_i] = dis_probs_norm
-        logging.info(
-            f'{unitary_i}-th repetition, time to calculate {num_prob} probs is {time_final - time_init}, sum={dis_total_prob}, acc beta={acc_beta}.')
+        # logging.info(
+        #     f'{unitary_i}-th repetition, time to calculate {num_prob} probs is {time_final - time_init}, sum={dis_total_prob}, acc beta={acc_beta}.')
 
         # <<<<<<<<<<<<<<<<<<< Plotting  >>>>>>>>>>>>>>>>>>
         if plotting:
             plt.figure(f'M={M}, N={N_int}')
-            plt.plot(list(range(num_prob)), dis_probs_norm)
+            if num_prob < 1000:
+                plt.plot(list(range(num_prob)), dis_probs_norm, 'b.', alpha=0.1, markersize=1)
+            else:
+                plt.plot(list(range(num_prob)), dis_probs_norm, color='blue', alpha=0.1, linewidth=0.1)
 
-
+    tu_final = time.time()
+    logging.info(f'Finish {repeat} repeats in {tu_final-tu_init}s')
     if plotting:
         plt.yscale('log')
         plt.title(f'M={M}, N={N_int}, K={K}')
         plt.xticks([0, num_prob])
-        plt.axhline(y=1 / num_prob, xmin=0, xmax=num_prob, color='black', label=f'1/({M} choose {N_int})')
-        plt.axhline(y= 0.01 / num_prob, xmin=0, xmax=num_prob, color='red', label=f'0.01/({M} choose {N_int})')
+        plt.axhline(y=1 / num_prob, xmin=0, xmax=num_prob, color='black', label=fr'1/({M} choose {N_int})')
+        plt.ylabel(r'$p_{\mathbf{n}}$')
+        plt.xlabel(r'$\mathbf{n}$')
         plt.legend()
         plt.savefig(DFUtils.create_filename(plot_dir + fr'\plot_M={M}_N={N_int}_K={K}.pdf'))
 
