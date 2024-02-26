@@ -1,119 +1,114 @@
+import time
+
 import numpy as np
+from scipy.stats import unitary_group
+
 import logging
 import datetime
-import pandas as pd
 import matplotlib.pyplot as plt
 
-from strawberryfields.decompositions import takagi
-
-from src.utils import MatrixUtils, DFUtils, LogUtils, RandomUtils
-from src.gbs_matrix import GBSMatrix, GaussianMatrix
-from src.adjacency_graph import MatchingGraph
+from src.utils import MatrixUtils, LogUtils, DFUtils
 
 # <<<<<<<<<<<<<<<<<<< Parameters  >>>>>>>>>>>>>>>>>>
-xs = [-1000, -500, -100, -50, -10, -5, -4, -3, -2, -1, -0.5, -0.25, -0.125, -0.1, -0.09, -0.08, -0.07, -0.06, -0.05,
-      -0.04, -0.03, -0.02, -0.01, 0.01, 0.05, 0.1, 0.3, 0.5, 0.8, 1, 2, 3, 4, 5, 10, 50, 100, 500, 1000]  # edge activity
-Ms = [10, 20, 30, 50, 100]
+Ms = np.arange(start=10, stop=210, step=10)
+M_num = len(Ms)
+repeat = 1000  # For each M, we average over this many Haar random unitaries
+w = 1  # The diagonal weight.
 
-# <<<<<<<<<<<<<<<<<<< Fixed parameters (if any)  >>>>>>>>>>>>>>>>>>
-delta = 5
-bound = - 1 / (4*delta - 4)
-r_max = 0.75
+save_fig = False
+save_raw_x = True
+if repeat > 1:
+    save_raw_x = False
 
 # <<<<<<<<<<<<<<<<<<< Logging  >>>>>>>>>>>>>>>>>>
 time_stamp = datetime.datetime.now().strftime("%d-%m-%Y(%H-%M-%S.%f)")
 dir = r'..\Results\probe_x\{}'.format(time_stamp)
 LogUtils.log_config(time_stamp='', dir=dir, filehead='log', module_name='', level=logging.INFO)
 
-logging.info('Probing the physical meaning of x. Mode M ={}, edge activity xs={}. Fix max_degree={}, r_max={}'.format(
-    Ms, xs, delta, r_max
-))
+logging.info('In this script, we find the scaling of |x_ij|=|B_ij/gamma_i*gamma_j| with M for '
+             'diagonal weight w = beta*(1-tanh(r))/sqrt(tanhr) = {}. '
+             'In this script we calculate sum of X_ij from 1 to M'.format(w))
+
+# Each row contains [M, min of x_abs, error, max of x_abs, error, min of sum_x_abs, error, max of sum_x_abs, error]
+data = np.zeros((M_num, 9), dtype=float)
+
+for iter, M in enumerate(Ms):
+
+    N = int(np.floor(np.sqrt(M)))
+    # [min of x_abs, max of x_abs, min of sum_x_abs, max of sum_x_abs]
+    data_M_i = np.zeros((repeat, 4))
+
+    for i in range(repeat):
+        time0 = time.time()
+        U = unitary_group.rvs(M)  # this is the most costly step
+
+        B = U @ U.T  # The tanhr term is absorbed inside w
+        half_gamma = w * np.sum(U, axis=1)
+        x = B / np.outer(half_gamma, half_gamma)
+        np.fill_diagonal(x, 0)  # We don't want x_ii
+
+        if save_raw_x:
+            np.save(DFUtils.create_filename(dir + fr'\raw\M={M}\raw_x_{i}.npy'), x)
+
+        # x_n = x[:N, :N]  # we only want the top left N times N submatrix
+        x_abs = np.absolute(x)
+        masked_x_abs = x_abs[
+            ~np.eye(len(x_abs), dtype=bool)]  # mask out diagonal terms which are zero. masked shaped is 1d
+        sum_x_abs = np.sum(x_abs, axis=1)
+
+        data_M_i[i] = np.array([np.min(masked_x_abs), np.max(masked_x_abs), np.min(sum_x_abs), np.max(sum_x_abs)])
+
+        time_final = time.time()
+        print(
+            f'time={time_final - time0:.3}')
+
+    np.save(DFUtils.create_filename(dir + fr'\raw\M={M}_mins_and_maxes.npy'), data_M_i)
+
+    means = np.mean(data_M_i, axis=0)  # Takes mean along column
+    stds = np.std(data_M_i, axis=0)  # Takes std along column
+
+    data_M = np.array([means, stds]).T.flatten()
+
+    logging.info('for M={}, '
+                 '[min of x_abs, error, max of x_abs, error, min of sum_x_abs, error, max of sum_x_abs, error] is {}'
+                 .format(M, data_M))
+
+    data[iter, 0] = M
+    data[iter, 1:] = data_M
+
+np.save(dir + fr'\x_min_and_max_against_M.npy', data)
 
 # <<<<<<<<<<<<<<<<<<< Plotting  >>>>>>>>>>>>>>>>>>
-# sq photons
-fig1, ax1 = plt.subplots()
-ax1.set_title('Average squeezed photons')
-ax1.set_xlabel('x')
-ax1.set_ylabel('n_sq')
-ax1.set_xscale('symlog')
-color_cycler = fig1.gca()._get_lines.prop_cycler
 
-# cl photons
-fig2, ax2 = plt.subplots()
-ax2.set_title('Average classical photons')
-ax2.set_xlabel('x')
-ax2.set_ylabel('n_cl')
-ax2.set_yscale('log')
-ax2.set_xscale('symlog')
+plt.figure(1)
+plt.errorbar(data[:, 0], data[:, 1], yerr=data[:, 2], label='min(|x|)')
+plt.plot(data[:, 0], data[:, 3], label='max(|x|)')
+plt.plot(data[:, 0], data[:, 5], label='min(sum|x|)')
+plt.plot(data[:, 0], data[:, 7], label='max(sum|x|)')
 
-# sq/cl
-fig3, ax3 = plt.subplots()
-ax3.set_title('Photon number ratio squeezed/classical')
-ax3.set_xlabel('x')
-ax3.set_ylabel('n_sq/n_cl')
-ax3.set_yscale('log')
-ax3.set_xscale('symlog')
-ax3.axvline(x=bound, ls=':', label='-1/(4*delta-4)')
+plt.plot(Ms, 1 / Ms, label='1/M', linestyle='-', color='black')
+plt.plot(Ms, 1 / Ms ** 2, label='1/M^2', linestyle='--', color='black')
+plt.plot(Ms, 1 / np.sqrt(Ms), label='1/sqrt(M)', linestyle='-.', color='black')
+plt.xscale('log')
+plt.yscale('log')
+plt.xlabel('M')
+plt.legend()
 
-for M in Ms:
+plt.ylim(bottom=1e-7)
 
-    # <<<<<<<<<<<<<<<<<<< Fixed parameters  >>>>>>>>>>>>>>>>>>
-    half_gamma = np.ones(M)
-    v = np.ones(M)
+# plt.figure(2)
+# plt.errorbar(data[:, 0], data[:, 1], yerr=data[:, 2], label='min(|x|)')
+# plt.errorbar(data[:, 0], data[:, 3], yerr=data[:, 4], label='max(|x|)')
+# plt.errorbar(data[:, 0], data[:, 5], yerr=data[:, 6], label='min(sum|x|)')
+# plt.errorbar(data[:, 0], data[:, 7], yerr=data[:, 8], label='max(sum|x|)')
+#
+# plt.plot(Ms, 1 / Ms, label='1/M', linestyle='-', color='black')
+# plt.plot(Ms, 1 / Ms ** 2, label='1/M^2', linestyle='--', color='black')
+# plt.plot(Ms, 1 / np.sqrt(Ms), label='1/sqrt(M)', linestyle='-.', color='black')
+# plt.xscale('log')
+# plt.yscale('log')
+# plt.xlabel('M')
+# plt.legend()
 
-    bound = -1 / (4 * (delta - 1))
-
-    adj = RandomUtils.random_adj(M, delta)
-    graph = MatchingGraph(adj, half_gamma=half_gamma, v=v, r_max=r_max)
-
-    logging.info('M={}. Set half_gamma={}, v={}'.format(
-        M, half_gamma, v,
-    ))
-
-    np.save(dir + r'\adj_M={}_delta={}'.format(M, delta), adj)
-
-    save_filename = DFUtils.create_filename(
-        dir + r'\M={}_delta={}.csv'.format(M, delta))
-    sq_phots = []
-    coh_phots = []
-
-    for idx, x in enumerate(xs):
-        graph.set_x(x)
-        sq, displacement, U = graph.generate_experiment()
-
-        logging.info('x={}, sq = {}, displacement = {}'.format(x, sq, displacement))
-        np.save(dir+r'\U_M={}_delta={}'.format(M,delta), U)
-
-        sq_phots.append(np.sum(np.sinh(sq) ** 2))
-        coh_phots.append(np.sum(displacement * displacement.conjugate()).real)
-
-    sq_phots = np.array(sq_phots)
-    coh_phots = np.array(coh_phots)
-
-    df = pd.DataFrame({
-        'x': xs,
-        'sq_photons': sq_phots,
-        'coh_photons': coh_phots
-    })
-    df.to_csv(save_filename)
-
-    # Plot sq photons
-    color = next(color_cycler)['color']
-    ax1.plot(xs, sq_phots, color=color, label='M={}'.format(M))
-    ax1.plot(xs, [M * np.sinh(r_max) ** 2] * len(xs),
-             color=color, linestyle='--')
-
-    # Plot coh photons
-    ax2.plot(xs, coh_phots, label='M={}'.format(M))
-
-    # Plot sq/coh
-    ax3.plot(xs, sq_phots / coh_phots, label='M={}'.format(M))
-
-ax1.legend()
-fig1.savefig(dir+r'\sq_phot.pdf')
-ax2.legend()
-fig2.savefig(dir+r'\cl_phot.pdf')
-ax3.legend()
-fig3.savefig(dir+r'\sq_div_cl.pdf')
-
-logging.info('Ferrari')
+if save_fig:
+    plt.savefig(dir + r'\Plot_x_data_against_M.png')

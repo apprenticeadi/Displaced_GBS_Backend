@@ -9,6 +9,8 @@ from src.utils import MatrixUtils
 
 # Todo: the dtype and tol arguments are a bit messy. Try cleaning it up.
 
+# Todo: Should almost always avoid using Fock basis matrices.
+
 class GBSMatrix:
     """
     GBS Matrices refer to the matrices and vectors that appear in the loop Hafnian calculation. Specifically they are
@@ -25,22 +27,13 @@ class GBSMatrix:
 
         return X
 
-    # @staticmethod
-    # def cov_Q(cov_fock, dtype=np.complex64):
-    #     """Returns cov_Q """
-    #     cov_fock = np.asarray(cov_fock)
-    #
-    #     M = cov_fock.shape[0] // 2
-    #
-    #     return cov_fock + np.identity(2 * M, dtype=dtype) / 2
-
     @staticmethod
-    def Amat(cov_fock):
-        cov_fock = np.asarray(cov_fock)
+    def Amat(cov_xxpp):
 
-        # TODO: this almost never works.
-        if not GaussianMatrix.is_valid_cov_fock(cov_fock):
-            raise ValueError('Input matrix is not valid fock base covariance matrix')
+        if not GaussianMatrix.is_valid_cov_xxpp(cov_xxpp):
+            raise ValueError('Input matrix is not valid xxpp-base covariance matrix')
+
+        cov_fock = Symplectic.matrix_xxpp_to_fock(cov_xxpp)
 
         M = cov_fock.shape[0] // 2
 
@@ -63,26 +56,29 @@ class GBSMatrix:
         return Amat
 
     @staticmethod
-    def Gamma(cov_fock, d_fock):
+    def Gamma(cov_xxpp, means_xxpp):
         """
-        :param cov_fock: Fock state covariance matrix
-        :param d_fock: Fock state displacement vector (alpha_1, ..., alpha_M, alpha_1^*, ..., alpha_M^*)
+        :param cov_xxpp: xxpp-basis covariance matrix
+        :param means_xxpp: xxpp-basis displacement vector sqrt(2) * (Re(alpha_1), ..., Re(alpha_M), Im(alpha_1), ..., Im(alpha_M))
         :return: The 2M Gamma vector that fills A diagonal when calculating loop Hafnian.
         """
-        cov_fock = np.asarray(cov_fock)
-        if not GaussianMatrix.is_valid_cov_fock(cov_fock):
-            raise ValueError('Input matrix is not valid fock base covariance matrix')
-        d_fock = np.asarray(d_fock)
-        if not GaussianMatrix.is_valid_d_fock(d_fock):
-            raise ValueError('Input vector is not valid fock base means vector')
+        cov_xxpp = np.asarray(cov_xxpp)
+        if not GaussianMatrix.is_valid_cov_xxpp(cov_xxpp):
+            raise ValueError('Input matrix is not valid xxpp-basis covariance matrix')
+        means_xxpp = np.asarray(means_xxpp)
+        if not GaussianMatrix.is_valid_d_xxpp(means_xxpp):
+            raise ValueError('Input vector is not valid xxpp-basis means vector')
 
-        M = cov_fock.shape[0] // 2
+        M = cov_xxpp.shape[0] // 2
 
-        if d_fock.shape[0] != 2 * M:
+        if means_xxpp.shape[0] != 2 * M:
             raise ValueError('Input matrix and vector should have compatible shape')
 
+        cov_fock = Symplectic.matrix_xxpp_to_fock(cov_xxpp)
+        means_fock = Symplectic.vector_xxpp_to_fock(means_xxpp)
+
         cov_Q = cov_fock + np.identity(2 * M) / 2
-        return d_fock.conjugate() @ np.linalg.inv(cov_Q)
+        return means_fock.conjugate() @ np.linalg.inv(cov_Q)
 
     @staticmethod
     def is_valid_Amat(A):
@@ -154,7 +150,6 @@ class GBSMatrix:
         return True
 
 
-
 class GaussianMatrix:
     """Class of functions for generating covariance matrix and means vector from GBS matrices"""
 
@@ -184,7 +179,7 @@ class GaussianMatrix:
     def cov_xxpp(A):
         cov_fock = GaussianMatrix.cov_fock(A)
 
-        return Symplectic.matrix_fock_to_xxpp(cov_fock)
+        return Symplectic.matrix_fock_to_xxpp(cov_fock).real
 
     @staticmethod
     def cov_Q(A):
@@ -210,9 +205,7 @@ class GaussianMatrix:
 
         cov_Q = GaussianMatrix.cov_Q(A)
 
-        d_conj = Gamma @ cov_Q
-
-        return d_conj.conjugate()
+        return cov_Q @ Gamma.conjugate()
 
     @staticmethod
     def d_xxpp(A, Gamma):
@@ -259,6 +252,8 @@ class GaussianMatrix:
     #TODO: This method never works, because converting to xxpp still leaves some imaginary parts that is hard to remove.
     @staticmethod
     def is_valid_cov_fock(cov_fock, tol=1e-7):
+        raise Warning('This method never works' )
+
         cov_fock = np.asarray(cov_fock)
 
         # Check it is Hermitian

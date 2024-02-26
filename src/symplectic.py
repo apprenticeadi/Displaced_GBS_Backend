@@ -1,4 +1,5 @@
 import numpy as np
+from scipy.linalg import block_diag
 from strawberryfields.decompositions import williamson
 
 class Symplectic:
@@ -84,7 +85,7 @@ class SymplecticFock(Symplectic):
         The operator is
         $$ \bigotimes_{i=1}^M \exp \left[ \frac{1}{2}( r\hat{a}_i^{\dagger2} - r^*\hat{a}_i^2 ) \right]$$
         where
-        $$r = s e^\theta$$
+        $$r = s e^{i\theta}$$
 
         :param s: Squeezing amplitude, $s=|r|$
         :param theta: Squeezing phase angle $\theta$
@@ -161,9 +162,20 @@ class SymplecticFock(Symplectic):
 
 class SymplecticXXPP(Symplectic):
 
+
     @staticmethod
     def single_mode_squeezing(s, theta=None, dtype=np.float64):
-        # this function the same as thewalrus.symplectic.squeezing
+        r"""
+        The operator is
+        $$ \bigotimes_{i=1}^M \exp \left[ \frac{1}{2}( r\hat{a}_i^{\dagger2} - r^*\hat{a}_i^2 ) \right]$$
+        where
+        $$r = s e^{i\theta}$$
+
+        :param s: Squeezing amplitude, $s=|r|$
+        :param theta: Squeezing phase angle $\theta$
+        :param dtype:
+        :return: xxpp-basis symplectic matrix for single mode squeezing
+        """
 
         s = np.atleast_1d(s)  # converts inputs into arrays of at least 1 dimension
 
@@ -174,11 +186,57 @@ class SymplecticXXPP(Symplectic):
         S = np.identity(2 * M, dtype=dtype)
 
         for i, (s_i, theta_i) in enumerate(zip(s, theta)):
-            S[i, i] = np.cosh(s_i) - np.cos(theta_i) * np.sinh(s_i)
+            S[i, i] = np.cosh(s_i) + np.cos(theta_i) * np.sinh(s_i)
             S[i, i + M] = np.sin(theta_i) * np.sinh(s_i)
             S[i + M, i] = np.sin(theta_i) * np.sinh(s_i)
-            S[i + M, i + M] = np.cosh(s_i) + np.cos(theta_i) * np.sinh(s_i)
+            S[i + M, i + M] = np.cosh(s_i) - np.cos(theta_i) * np.sinh(s_i)
+
+        return S
+
+    @staticmethod
+    def two_mode_squeezing(s,  dtype=np.complex64):
+        r"""
+        The j_th mode operator is
+        $$ \exp \left[ s_j (\hat{a}_{jH}^{\dagger}\hat{a}_{jV}^\dagger -  \hat{a}_{jH}\hat{a}_{jV}) \right]$$
+        Here I made life easier by demanding squeezing parameter, $s_j$, be real.
+        H and V stands for horizontal and vertical polarisation.
+
+        :param s: Squeezing amount
+        :param dtype:
+        :return: 2M*2M xxpp-basis symplectic matrix. The ordering is $\{x_{1H}, x_{1V}, ..., x_{MH}, x_{MV}, p_{1H},
+          p_{1V}, ..., p_{MH}, p_{MV} \} $
+        """
+        s = np.atleast_1d(s)  # converts inputs into arrays of at least 1 dimension
+        # M = len(s)
+
+        subs1 = []
+        subs2 = []
+        for s_i in s:
+            Ch = np.array([[np.cosh(s_i), 0], [0, np.cosh(s_i)]])
+            Sh = np.array([[0, np.sinh(s_i)], [np.sinh(s_i), 0]])
+            subs1.append(Ch+Sh)
+            subs2.append(Ch-Sh)
+
+        S = block_diag(*subs1, *subs2)
 
         return S
 
 
+    @staticmethod
+    def interferometer(U):
+        """
+        xxpp basis symplectic matrix for interferometer
+        :param U: unitary matrix
+        :return: symplectic transformation matrix (Fock basis)
+        """
+
+        M = U.shape[0]
+
+        if not np.allclose(U @ U.T.conjugate(), np.identity(M)):
+            raise ValueError('Input matrix should be unitary')
+
+        X = U.real
+        Y = U.imag
+        S = np.block([[X, Y], [-Y, X]])
+
+        return S

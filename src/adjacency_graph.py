@@ -2,10 +2,13 @@ import networkx as nx
 import numpy as np
 import copy
 
+
 from strawberryfields.decompositions import takagi
 
 from src.utils import MatrixUtils
 from src.gbs_matrix import GBSMatrix, GaussianMatrix
+
+#TODO: Add vertex weighting to adjacency graph
 
 class AdjacencyGraph:
     """
@@ -15,20 +18,37 @@ class AdjacencyGraph:
     Only takes in undirected graphs, with symmetric adjacency matrices.
     """
 
-    def __init__(self, adj):
+    def __init__(self, adj, vertex_weights=None):
         adj = np.asarray(adj)
         m, n = adj.shape
+
+        if vertex_weights is None:
+            vertex_weights = np.ones(m)
+        vertex_weights = np.asarray(vertex_weights).flatten()
+        l = vertex_weights.shape[0]
+
         if m != n:
             raise ValueError('Input adjacency matrix must be square matrix')
-
+        if m != l:
+            raise ValueError('Input adjacency matrix and vertex weights should have same dimensions')
         if not np.allclose(adj, adj.T):
             raise ValueError('Input adjacency matrix must be symmetric matrix')
 
-        self.__adj = np.asarray(adj)
+        self.__adj = adj
+        self.__vertex_weights = vertex_weights  # np array
         self.M = m
 
     def get_graph(self):
         G = nx.from_numpy_matrix(self.get_adj())
+        for n in G.nodes:
+            G.nodes[n]['weight'] = self.__vertex_weights[n]
+
+        # self.__edge_weights = nx.get_edge_attributes(G, 'weight')  # dictionary
+
+        for u, v, d in G.edges(data=True):
+            weight = d['weight']
+            distance = np.absolute(weight)
+            G.edges[u, v]['distance'] = distance
 
         return G
 
@@ -36,6 +56,52 @@ class AdjacencyGraph:
 
         return copy.deepcopy(self.__adj)
 
+    # Todo: draw loops
+    def draw(self, show_edge_weights=False, node_size_min=100, node_size_max=1000, edge_width_min=2, edge_width_max=8,
+             edge_transparency=0.5, edge_color='b', node_font_size=10, edge_font_size=10, ax_margins=0.08, ax_axis='off'):
+
+        import matplotlib.pyplot as plt
+        fig = plt.figure()
+
+        G = self.get_graph()
+
+        pos = nx.spring_layout(G, weight='distance', seed=7)  # positions for all nodes - seed for reproducibility
+
+        # Node size scaled to vertex weights
+        vw_min = min(self.__vertex_weights)
+        vw_max = max(self.__vertex_weights)
+        if np.isclose(vw_min, vw_max):
+            node_sizes = 0.5 * (node_size_max + node_size_min) * np.ones(self.M)
+        else:
+            node_sizes = (self.__vertex_weights - vw_min) * (node_size_max - node_size_min) / (vw_max - vw_min) + node_size_min
+        nx.draw_networkx_nodes(G, pos, node_size=node_sizes)
+
+        # Edge width scaled to edge weight magnitudes
+        edge_dist_dict = nx.get_edge_attributes(G, 'distance')  # dictionary
+        edge_dist = np.asarray(list(edge_dist_dict.values()))
+        ed_min = min(edge_dist)
+        ed_max = max(edge_dist)
+        if np.isclose(ed_min, ed_max):
+            edge_widths = 0.5 * (edge_width_max + edge_width_min) * np.ones(self.M)
+        else:
+            edge_widths = (edge_dist - ed_min) * (edge_width_max - edge_width_min) / (ed_max - ed_min) + edge_width_min
+        nx.draw_networkx_edges(G, pos, edgelist=list(edge_dist_dict.keys()), width=edge_widths, alpha=edge_transparency, edge_color=edge_color)
+
+        # Vertex labels
+        vertex_labels = {u: f'{u}' for u in G.nodes()}
+        nx.draw_networkx_labels(G, pos, vertex_labels, font_size=node_font_size)
+
+        # Edge weight labels
+        if show_edge_weights:
+            edge_labels = {(u,v): f'{d["weight"]:.2f}' for u,v,d in G.edges(data=True)}
+            nx.draw_networkx_edge_labels(G, pos, edge_labels, font_size=edge_font_size)
+
+        ax = plt.gca()
+        ax.margins(ax_margins)
+        plt.axis(ax_axis)
+        plt.tight_layout()
+
+        plt.show()
 
 class MatchingGraph(AdjacencyGraph):
     """
