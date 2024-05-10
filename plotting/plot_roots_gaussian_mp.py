@@ -6,24 +6,24 @@ from src.utils import DFUtils, DGBSUtils
 import datetime
 import time
 
-total_Ns = list(range(4, 16))
+total_Ns = list(range(4, 17))
 reps = 10000
 
 # <<<<<<<<<<<<<<<<<<< Basic parameters  >>>>>>>>>>>>>>>>>>
-# Ns_dir_dict = {
-#     rf'..\Results\roots_matching_polynomial\{reps}rep_2023-08-23(18-00-43.689530)': list(range(4, 15)),
-#     rf'..\Results\roots_matching_polynomial\{reps}rep_2023-08-23(19-35-17.526866)': [15],
-#     rf'..\Results\roots_matching_polynomial\{reps}rep_2023-08-25(17-08-36.941174)': [16]
-# }
-
 Ns_dir_dict = {
-    rf'..\Results\roots_matching_polynomial\{reps}rep_2023-09-10(19-35-56.363960)': list(range(4, 16))
+    rf'..\Results\roots_matching_polynomial\{reps}rep_2023-08-23(18-00-43.689530)': list(range(4, 15)),
+    rf'..\Results\roots_matching_polynomial\{reps}rep_2023-08-23(19-35-17.526866)': [15],
+    rf'..\Results\roots_matching_polynomial\{reps}rep_2023-08-25(17-08-36.941174)': [16]
 }
 
-save_fig = True
+# Ns_dir_dict = {
+#     rf'..\Results\roots_matching_polynomial\{reps}rep_2023-09-10(19-35-56.363960)': list(range(4, 16))
+# }
+
+save_fig = False
 time_stamp = datetime.datetime.now().strftime("%Y-%m-%d(%H-%M-%S.%f)")
-# plot_dir = fr'..\Plots\roots_mp\tildeX_distrib_{time_stamp}'
-plot_dir = fr'..\Plots\roots_mp\symGauss_distrib_{time_stamp}'
+plot_dir = fr'..\Plots\roots_mp\tildeX_distrib_{time_stamp}'
+# plot_dir = fr'..\Plots\roots_mp\symGauss_distrib_{time_stamp}'
 # <<<<<<<<<<<<<<<<<<< Reading raw data  >>>>>>>>>>>>>>>>>>
 def find_quart(a, axis=0):
     return np.quantile(a, 0.25, axis=axis)

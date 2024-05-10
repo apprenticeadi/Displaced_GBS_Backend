@@ -28,8 +28,15 @@ M_to_plots = [9, 16, 25]
 r = 12.5
 K_to_plots = ['K=M', 'K=sqrtM']
 
+fontsize=14
+
+'''Combined plot'''
+figc, axc = plt.subplot_mosaic('aabbcc;ddeeff;ggghhh', figsize=(15,10), layout='constrained')
+
 '''Plot raw distributions of tilde pn'''
-fig, axs = plt.subplots(2, 3, squeeze=True, figsize=(8, 5), layout='constrained', sharex='col', sharey='all')
+# fig, axs = plt.subplots(2, 3, squeeze=True, figsize=(8, 5), layout='constrained', sharex='col', sharey='all')
+top_ax_list = list(axc.values())[:6]
+axs = np.asarray(top_ax_list).reshape(2,3)
 
 for i in range(axs.shape[0]):
 
@@ -64,30 +71,33 @@ for i in range(axs.shape[0]):
                 ax.plot(list(range(num_prob)), norm_probs[k, :], color='blue', alpha=0.1, linewidth=0.1)
 
         ax.set_yscale('log')
-        # ax.set_ylim([1e-10, 1])
+        ax.set_ylim([1e-14, 1])
 
         ax.axhline(y= 1 / num_samples, xmin=0, xmax=num_prob, color='gray', ls='dashed', label=rf'$1/|\Omega|$')
 
         if j == 0:
-            ax.set_title(rf'({alphabet[i*axs.shape[1]+j]}) $M={{{M}}}$, '+klatex, loc='left')
+            ax.set_title(rf'({alphabet[i*axs.shape[1]+j]}) $M={{{M}}}$, '+klatex, loc='left', fontsize=fontsize)
         else:
-            ax.set_title(rf'({alphabet[i*axs.shape[1]+j]}) $M={{{M}}}$', loc='left')
+            ax.set_title(rf'({alphabet[i*axs.shape[1]+j]}) $M={{{M}}}$', loc='left', fontsize=fontsize)
 
         if j == 0:
-            ax.set_ylabel(r'$\tilde{p}_{\mathbf{n}}$')
+            ax.set_ylabel(r'$\tilde{p}_{\mathbf{n}}$', fontsize=fontsize-2)
         if i == 1:
-            ax.set_xlabel(r'$\mathbf{n}$')
+            ax.set_xlabel(r'$\mathbf{n}$',fontsize=fontsize-2)
 
         if i == 0 and j == 0:
-            ax.legend()
+            ax.legend(fontsize=fontsize)
 
-fig.savefig(DFUtils.create_filename(plot_dir + rf'\r={r}_pn_distribs.pdf'))
+# fig.savefig(DFUtils.create_filename(plot_dir + rf'\r={r}_pn_distribs.pdf'))
 
 
 '''Plot alpha for eta=0.25'''
-rs = [0.17, 1, 12.5]
-fontsize=16
-figg, axx = plt.subplots(1, 2, squeeze=True, figsize=(12, 5), sharey=True)
+rs = [12.5,1,0.17]
+
+# figg, axx = plt.subplots(1, 2, squeeze=True, figsize=(12, 5), sharey=True)
+
+bottom_ax_list = list(axc.values())[6:]
+axx = np.asarray(bottom_ax_list)
 
 for i_k, klabel in enumerate(K_to_plots):
     if klabel == 'K=M':
@@ -103,7 +113,6 @@ for i_k, klabel in enumerate(K_to_plots):
 
         timestamp = result_timestamps[rf'{klabel}_r={r}']
 
-
         results_df = pd.read_csv(result_par_dir + rf'\{timestamp}\alpha_for_eta=0.25.csv')
         # the alpha here is defined as Pr(pn > alpha/|Omega|) > 1-eta
 
@@ -111,13 +120,16 @@ for i_k, klabel in enumerate(K_to_plots):
         n_errors = np.asarray(results_df['n_error'])
         p_errors = np.asarray(results_df['p_error'])
         ax.errorbar(results_df['M'], 1/inverse_alphas, yerr=[n_errors/inverse_alphas**2, p_errors/inverse_alphas**2],
-                     fmt='.', label=rf'$R={r}$')
+                     marker='.', label=rf'$R={r}$')
 
     if i_k == 0:
         ax.legend(fontsize=fontsize)
-        ax.set_ylabel(r'$\alpha$', fontsize=fontsize)
+        ax.set_ylabel(r'$\alpha$', fontsize=fontsize-2)
 
-    ax.set_title(rf'({alphabet[i_k]}) '+klatex, fontsize=fontsize, loc='left')
-    ax.set_xlabel(r'$M$', fontsize=fontsize)
-    ax.tick_params(labelsize=fontsize-2)
-figg.savefig(DFUtils.create_filename(plot_dir + rf'\r={rs}_alphas_against_M.pdf'))
+    ax.set_title(rf'({alphabet[i_k+6]}) '+klatex + r', $\eta=25\%$', fontsize=fontsize, loc='left')
+    ax.set_xlabel(r'$M$', fontsize=fontsize-2)
+    ax.tick_params(labelsize=fontsize-4)
+    ax.set_ylim([0, 25])
+# figg.savefig(DFUtils.create_filename(plot_dir + rf'\r={rs}_alphas_against_M.pdf'))
+
+figc.savefig(DFUtils.create_filename(plot_dir + rf'\combined_plot.pdf'))
