@@ -11,31 +11,31 @@ from src.utils import MatrixUtils, LogUtils, DFUtils
 import datetime
 
 
-def generate_tildeX(N, repeats, mean=0, stddev=1/np.sqrt(2)):
+def generate_tildeX(N, K, repeats, mean=0, stddev=1/np.sqrt(2)):
 
     tildeXs = np.zeros((repeats, N, N), dtype=np.complex128)
     for i in range(repeats):
-        X = np.random.normal(mean, stddev, (N, N)) + 1j * np.random.normal(mean, stddev, (N, N))
+        X = np.random.normal(mean, stddev, (N, K)) + 1j * np.random.normal(mean, stddev, (N, K))
         tildeX = (X @ X.T) / np.outer(np.sum(X, axis=1), np.sum(X, axis=1))
-
+        assert tildeX.shape == (N,N)
         tildeXs[i,:,:] = tildeX
 
     return tildeXs
 
-def generate_X(N, repeats, mean=0, stddev=1/np.sqrt(2)):
+def generate_X(N, K, repeats, mean=0, stddev=1/np.sqrt(2)):
 
     Xs = np.zeros((repeats, N, N), dtype = np.complex128)
     for i in range(repeats):
-        X = np.random.normal(mean, stddev, (N,N)) + 1j * np.random.normal(mean, stddev, (N,N))
+        X = np.random.normal(mean, stddev, (N,K)) + 1j * np.random.normal(mean, stddev, (N,K))
         Xs[i, :, :] = X
 
     return Xs
 
-def generate_symX(N, repeats, mean=0, stddev=1/np.sqrt(2)):
+def generate_symX(N, K, repeats, mean=0, stddev=1/np.sqrt(2)):
 
     symXs = np.zeros((repeats, N,N), dtype=np.complex128)
     for i in range(repeats):
-        X = np.random.normal(mean, stddev, (N,N)) + 1j * np.random.normal(mean, stddev, (N,N))
+        X = np.random.normal(mean, stddev, (N,K)) + 1j * np.random.normal(mean, stddev, (N,K))
         symX = X @ X.T
 
         symXs[i, :, :] = symX
@@ -56,10 +56,11 @@ def find_roots(coeffs):
 
 
 # <<<<<<<<<<<<<<<<<<< Basic Parameters  >>>>>>>>>>>>>>>>>>
-Ns = [20] # np.arange(4, 16)
+Ns = np.arange(4, 16)
+Ks = 16 * np.ones(len(Ns), dtype=int)  # Ns
 mean = 0
-stddev = 1 # 1 / np.sqrt(2)
-repeats = 1
+stddev = 1 / np.sqrt(2)
+repeats = 10000
 roots_dict = {}
 distrib = 'tilde_gaussian' # 'sym_gaussian' # 'gaussian'  # 'tilde_gaussian'
 
@@ -75,28 +76,31 @@ LogUtils.log_config(time_stamp='', dir=results_dir, filehead='log', module_name=
 
 logging.info(f'In this script, I calculate the zeros of f(z)=lhaf(A z, 1), where A is {distrib} distribution '
              f'defined using i.i.d Gaussians with mean={mean} and stddev of'
-             f'real (imaginary) part = {stddev}. N taken from Ns={Ns}. For each N, tildeX is generated for '
-             f'repeats={repeats} times, and int(N/2) roots are calculated for each tildeX. ')
-logging.info(f'The tildeXs are stored as [repeats, N, N] arrays, the matching polynomial coefficients are stored as'
+             f'real (imaginary) part = {stddev}. N taken from Ns={Ns}, and corresponding K is {Ks}. '
+             f'For each N, matrix A is generated for repeats={repeats} times, and int(N/2) roots are calculated for each '
+             f'matrix A. ')
+logging.info(f'The matrices A are stored as [repeats, N, N] arrays, the matching polynomial coefficients are stored as'
              f'[repeats, int(N/2)+1] arrays, where the 0-th column is the zero-th order coefficient etc. '
              f'The roots are stored as [repeats, int(N/2)] arrays. ')
 
 # <<<<<<<<<<<<<<<<<<< Calculations  >>>>>>>>>>>>>>>>>>
 for i_N, N in enumerate(Ns):
 
+    K = Ks[i_N]  # number of non-vacuum modes. K defines the distribution.
+
     k_max = int(N / 2)  # maximum degree of matching polynomial, also number of roots
 
     if distrib == 'tilde_gaussian':
-        As = generate_tildeX(N, repeats, mean=mean, stddev=stddev)
+        As = generate_tildeX(N, K, repeats, mean=mean, stddev=stddev)
     elif distrib == 'gaussian':
-        As = generate_X(N, repeats, mean=mean, stddev=stddev)
+        As = generate_X(N, K, repeats, mean=mean, stddev=stddev)
     elif distrib == 'sym_gaussian':
-        As = generate_symX(N, repeats, mean=mean, stddev=stddev)
+        As = generate_symX(N, K, repeats, mean=mean, stddev=stddev)
     else:
         raise ValueError(f'distribution {distrib} not recognized')
 
 
-    np.save(DFUtils.create_filename(results_dir + fr'\raw\N={N}_tildeXs.npy'), As)
+    np.save(DFUtils.create_filename(results_dir + fr'\raw\N={N}_K={K}_tildeXs.npy'), As)
 
     coeffs = np.zeros((repeats, k_max + 1), dtype=np.complex128)
     coeffs[:, 0] = 1
@@ -119,7 +123,7 @@ for i_N, N in enumerate(Ns):
 
     logging.info(f'N={N}, time={t2 - t1} to construct {repeats} matching polynomials')
 
-    np.save(DFUtils.create_filename(results_dir + fr'\raw\N={N}_mp_coeffs.npy'), coeffs)
+    np.save(DFUtils.create_filename(results_dir + fr'\raw\N={N}_K={K}_mp_coeffs.npy'), coeffs)
 
     # # Test function
     # lhaf_vals = np.zeros(repeats, dtype=np.complex128)
@@ -141,7 +145,7 @@ for i_N, N in enumerate(Ns):
     max_roots[i_N] = max_root
     median_roots[i_N] = median_root
 
-    np.save(DFUtils.create_filename(results_dir + fr'\N={N}_roots.npy'), roots_N)
+    np.save(DFUtils.create_filename(results_dir + fr'\N={N}_K={K}_roots.npy'), roots_N)
 
     logging.info(f'N={N}, time={t3 - t2} for to find roots for {repeats} matching polynomials')
 
@@ -159,13 +163,13 @@ half_axis_ticks = 10 ** np.arange(log_linthresh, axis_log_lim+1, step=2, dtype=n
 axis_ticks = np.concatenate([-half_axis_ticks, half_axis_ticks, [0]])
 
 for i_N, N in enumerate(Ns):
-    save_name = results_dir + fr'\plots\N={N}.png'
+    save_name = results_dir + fr'\plots\N={N}_K={K}.png'
 
     # Create a scatter plot in the complex plane
     roots_real = [np.real(r) for r in roots_dict[N]]
     roots_imag = [np.imag(r) for r in roots_dict[N]]
 
-    plt.figure(f'N={N}')
+    plt.figure(f'N={N},K={K}')
 
     # Remove plot boundaries (spines)
     ax = plt.gca()  # Get the current Axes
@@ -179,7 +183,11 @@ for i_N, N in enumerate(Ns):
     plt.axvline(0, color='black', linewidth=1)  # Imaginary axis
 
     # Scatter plot roots
-    plt.scatter(roots_real, roots_imag, marker='x', s=10, label='Roots')
+    plt.scatter(roots_real, roots_imag, marker='x', s=10)
+
+    # draw red circle with radius median_roots[i_N]
+    circle = plt.Circle((0, 0), radius=median_roots[i_N], color='red', fill=False, label=rf'$|z|=${median_roots[i_N]:.3g}')
+    ax.add_patch(circle)
 
     # Set axes
     plt.xlim(-axis_lim, axis_lim)
@@ -187,12 +195,13 @@ for i_N, N in enumerate(Ns):
     plt.xticks(axis_ticks)
     plt.yticks(axis_ticks)
 
-
     plt.xscale('symlog', linthresh=linthresh)
     plt.yscale('symlog', linthresh=linthresh)
 
     plt.xlabel('Real')
     plt.ylabel('Imaginary')
+
+    ax.legend()
 
     if save_fig:
         plt.savefig(DFUtils.create_filename(save_name))
