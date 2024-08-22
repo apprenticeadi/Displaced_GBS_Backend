@@ -17,27 +17,29 @@ plt.show()
 plt.ion()
 matplotlib.use('TkAgg')
 
-dir1 = r'C:\Users\zl4821\PycharmProjects\displaced_car_chase\Results\roots_matching_polynomial\10000rep_2024-08-05(13-15-24.513015)'
-dir2 = r'C:\Users\zl4821\PycharmProjects\displaced_car_chase\Results\roots_matching_polynomial\10000rep_2023-08-25(17-08-36.941174)'
+# dir1 = r'C:\Users\zl4821\PycharmProjects\displaced_car_chase\Results\roots_matching_polynomial\10000rep_2024-08-05(13-15-24.513015)'
+# dir2 = r'C:\Users\zl4821\PycharmProjects\displaced_car_chase\Results\roots_matching_polynomial\10000rep_2023-08-25(17-08-36.941174)'
+# dir1 = r'C:\Users\zl4821\PycharmProjects\displaced_car_chase\Results\roots_matching_polynomial\10000rep_2024-08-05(13-13-03.177595)'
+# dir1 = r'C:\Users\zl4821\PycharmProjects\displaced_car_chase\Results\roots_matching_polynomial\10000rep_2024-08-07(13-48-54.169288)'
+dir1 = r'C:\Users\zl4821\PycharmProjects\displaced_car_chase\Results\roots_matching_polynomial\10000rep_2024-08-07(11-16-28.100724)'
 reps = 10000
 
-savefig=False
 time_stamp = datetime.datetime.now().strftime("%Y-%m-%d(%H-%M-%S.%f)")
-plot_dir = fr'..\Plots\roots_mp\tildeX_distrib_{time_stamp}'
+plot_dir = fr'..\Plots\roots_mp\symGauss_distrib_{time_stamp}'
 
 fontsize = 18
 
 fig = plt.figure(figsize=(8, 10), layout='constrained')
-ax1 = fig.add_subplot(211)
-Ns = [16, 12, 8, 4]
+ax1 = fig.add_subplot(212)
+Ns = [14, 12, 8, 4]  # [12, 10, 8, 6]
 K = 16
 bins = np.logspace(-7, 1, 200)
 root_dict = {}
 for N in Ns:
-    if N == 16:
-        roots = np.load(dir2+rf'\N=16_roots.npy')
-    else:
-        roots = np.load(dir1+rf'\N={N}_K={K}_roots.npy')
+    # if N == K:
+    #     roots = np.load(dir2+rf'\N=16_roots.npy')
+    # else:
+    roots = np.load(dir1+rf'\N={N}_K={K}_roots.npy')
 
     roots = roots.reshape((reps, N//2))
     min_roots = np.zeros(reps, dtype=np.complex128)
@@ -57,21 +59,22 @@ ax1.set_xscale('log')
 ax1.set_xlim([1e-3, 10])
 ax1.set_xlabel(r'$|z|$', fontsize=fontsize-2)
 ax1.set_ylabel(r'Roots per bin', fontsize=fontsize-2)
-ax1.set_title('(a) K=16', fontsize=fontsize, loc='left')
+ax1.set_title(f'(b) K={K}', fontsize=fontsize, loc='left')
 ax1.legend(fontsize=fontsize-2)
 ax1.tick_params(axis='both', which='major', labelsize=fontsize-6)
 
-roots = root_dict[16]  # the minimum root of the 10,000 matching polynomials
+roots = root_dict[Ns[0]]  # the minimum root of the 10,000 matching polynomials
 x = np.real(roots)
 y = np.imag(roots)
 
 bins = np.logspace(-7, 1, 150)
 symbins = np.concatenate([-bins[::-1], bins])
 
-ax2 = fig.add_subplot(212)
+ax2 = fig.add_subplot(211)
 data , x_e, y_e = np.histogram2d(x, y, symbins)
 data = data / np.sum(data)
-z = interpn( ( 0.5*(x_e[1:] + x_e[:-1]) , 0.5*(y_e[1:]+y_e[:-1]) ) , data , np.vstack([x,y]).T , method = "splinef2d", bounds_error = False)
+z = interpn( ( 0.5*(x_e[1:] + x_e[:-1]) , 0.5*(y_e[1:]+y_e[:-1]) ) , data , np.vstack([x,y]).T ,
+             method = "splinef2d", bounds_error = False)
 
 #To be sure to plot all data
 z[np.where(np.isnan(z))] = 0.0
@@ -83,14 +86,14 @@ image = ax2.scatter(x, y, c=z, s=20, cmap='viridis', )
 ax2.set_xscale('symlog', linthresh=1e-3)
 ax2.set_yscale('symlog', linthresh=1e-3)
 
-np.savetxt(plot_dir + rf'\N=16_real_imag_density.txt', np.vstack([x, y, z]).T)
+np.savetxt(plot_dir + rf'\N={K}_real_imag_density.txt', np.vstack([x, y, z]).T)
 # colorbar
 # norm = Normalize(vmin = np.min(z), vmax = np.max(z))
 cbar = fig.colorbar(image, ax=ax2, location='bottom', aspect=30)
 cbar.ax.set_xlabel('Density of roots', fontsize=fontsize-2)
 cbar.ax.tick_params(labelsize=fontsize-6)
 
-ax2.set_title('(b) N=K=16', fontsize=fontsize, loc='left')
+ax2.set_title(f'(a) N={Ns[0]}, K={K}', fontsize=fontsize, loc='left')
 ax2.set_xlabel(r'Re$(z)$', fontsize=fontsize-2)
 ax2.set_ylabel(r'Im$(z)$', fontsize=fontsize-2)
 ax2.tick_params(axis='both', which='major', labelsize=fontsize-6)
@@ -123,8 +126,8 @@ quart_bar = [quart, quart - quart_res.confidence_interval.low, quart_res.confide
 ax1.axvspan(quart-quart_bar[1], quart+quart_bar[2], color='red', alpha=1.)
 
 # draw circle patches
-circle_median = plt.Circle((0, 0), radius=median, color='black', fill=False, label=rf'$|z|=${median:.3f}', lw=2)
-circle_quart = plt.Circle((0, 0), radius=quart, color='red', fill=False, label=rf'$|z|=${quart:.3f}', lw=2)
+circle_median = plt.Circle((0, 0), radius=median, color='black', fill=False, lw=2, label= r'50% non-zero') # label=rf'$|z|=${median:.3f}')
+circle_quart = plt.Circle((0, 0), radius=quart, color='red', fill=False, lw=2, label=r'75% non-zero') # label=rf'$|z|=${quart:.3f}')
 ax2.add_patch(circle_median)
 ax2.add_patch(circle_quart)
 

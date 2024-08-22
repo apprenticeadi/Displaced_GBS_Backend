@@ -1,15 +1,21 @@
 import numpy as np
+import scipy.stats
+from scipy.stats import unitary_group
 from numpy.polynomial import Polynomial
 import networkx as nx
 import time
 import numba
 import logging
+import matplotlib
 import matplotlib.pyplot as plt
-from thewalrus import hafnian
+# from thewalrus import hafnian
 
 from src.utils import MatrixUtils, LogUtils, DFUtils
 import datetime
 
+plt.show()
+plt.ion()
+matplotlib.use('TkAgg')
 
 def generate_tildeX(N, K, repeats, mean=0, stddev=1/np.sqrt(2)):
 
@@ -23,8 +29,8 @@ def generate_tildeX(N, K, repeats, mean=0, stddev=1/np.sqrt(2)):
     return tildeXs
 
 def generate_X(N, K, repeats, mean=0, stddev=1/np.sqrt(2)):
-
-    Xs = np.zeros((repeats, N, N), dtype = np.complex128)
+    assert N == K  # the GBS matrix has to be a square matrix for a fully connected graph.
+    Xs = np.zeros((repeats, N, K), dtype = np.complex128)
     for i in range(repeats):
         X = np.random.normal(mean, stddev, (N,K)) + 1j * np.random.normal(mean, stddev, (N,K))
         Xs[i, :, :] = X
@@ -42,6 +48,25 @@ def generate_symX(N, K, repeats, mean=0, stddev=1/np.sqrt(2)):
 
     return symXs
 
+def generate_tildesubU(N, K, M, repeats):
+
+    assert N <= M
+    assert K <= M
+    subUs = np.zeros((repeats, N, N), dtype=np.complex128)
+    for i in range(repeats):
+        # generate a random M x M unitary matrix U
+        U = unitary_group.rvs(M)
+
+        # get a random N x K submatrix of U
+        rows = np.random.choice(M, N, replace=False)
+        cols = np.random.choice(M, K, replace=False)
+        subU = U[rows, :][:, cols]
+        tildesubU = (subU @ subU.T) / np.outer(np.sum(subU, axis=1), np.sum(subU, axis=1))
+
+        subUs[i, :, :] = tildesubU
+
+    return subUs
+
 @numba.njit(parallel=True)
 def find_roots(coeffs):
     num_pol, num_roots = coeffs.shape
@@ -56,13 +81,14 @@ def find_roots(coeffs):
 
 
 # <<<<<<<<<<<<<<<<<<< Basic Parameters  >>>>>>>>>>>>>>>>>>
-Ns = np.arange(4, 16)
-Ks = 16 * np.ones(len(Ns), dtype=int)  # Ns
+Ns = [12] # [4, 8, 12, 14]  # np.arange(4, 16)
+Ks = 144 * np.ones(len(Ns), dtype=int)  # Ns
+M = 144
 mean = 0
 stddev = 1 / np.sqrt(2)
 repeats = 10000
 roots_dict = {}
-distrib = 'tilde_gaussian' # 'sym_gaussian' # 'gaussian'  # 'tilde_gaussian'
+distrib = 'sub_unitary' # 'sym_gaussian' # 'gaussian'  # 'tilde_gaussian'  # 'sub_unitary
 
 save_fig = True
 min_roots = np.zeros(len(Ns), dtype=float)
@@ -74,10 +100,18 @@ time_stamp = datetime.datetime.now().strftime("%Y-%m-%d(%H-%M-%S.%f)")
 results_dir = fr'..\Results\roots_matching_polynomial\{repeats}rep_{time_stamp}'
 LogUtils.log_config(time_stamp='', dir=results_dir, filehead='log', module_name='', level=logging.INFO)
 
-logging.info(f'In this script, I calculate the zeros of f(z)=lhaf(A z, 1), where A is {distrib} distribution '
-             f'defined using i.i.d Gaussians with mean={mean} and stddev of'
-             f'real (imaginary) part = {stddev}. N taken from Ns={Ns}, and corresponding K is {Ks}. '
-             f'For each N, matrix A is generated for repeats={repeats} times, and int(N/2) roots are calculated for each '
+if distrib == 'sub_unitary':
+    logging.info(f'In this script, I calculate the zeros of f(z)=lhaf(A z, 1), where A is {distrib} distribution '
+                 f'defined using rescaled submatrices of a random unitary matrix of size {M}. The submatrices have '
+                 f'dimensions N*K, and rescaled by '
+                 f'(subU @ subU.T) / np.outer(np.sum(subU, axis=1), np.sum(subU, axis=1))'
+                 f'N taken from Ns={Ns}, and corresponding K is {Ks}. ')
+else:
+    logging.info(f'In this script, I calculate the zeros of f(z)=lhaf(A z, 1), where A is {distrib} distribution '
+                 f'defined using i.i.d Gaussians with mean={mean} and stddev of'
+                 f'real (imaginary) part = {stddev}. N taken from Ns={Ns}, and corresponding K is {Ks}. ')
+
+logging.info(f'For each N, matrix A is generated for repeats={repeats} times, and int(N/2) roots are calculated for each '
              f'matrix A. ')
 logging.info(f'The matrices A are stored as [repeats, N, N] arrays, the matching polynomial coefficients are stored as'
              f'[repeats, int(N/2)+1] arrays, where the 0-th column is the zero-th order coefficient etc. '
@@ -96,6 +130,8 @@ for i_N, N in enumerate(Ns):
         As = generate_X(N, K, repeats, mean=mean, stddev=stddev)
     elif distrib == 'sym_gaussian':
         As = generate_symX(N, K, repeats, mean=mean, stddev=stddev)
+    elif distrib == 'sub_unitary':
+        As = generate_tildesubU(N, K, M, repeats)
     else:
         raise ValueError(f'distribution {distrib} not recognized')
 

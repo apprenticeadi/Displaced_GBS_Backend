@@ -1,4 +1,5 @@
 import numpy as np
+import matplotlib
 import matplotlib.pyplot as plt
 from scipy.special import comb, factorial
 from scipy.stats import bootstrap
@@ -10,6 +11,9 @@ import pandas as pd
 from src.utils import DFUtils, DGBSUtils
 from src.photon_number_distributions import big_F
 
+plt.show()
+plt.ion()
+matplotlib.use('TkAgg')
 
 # <<<<<<<<<<<<<<<<<<< Functions  >>>>>>>>>>>>>>>>>>
 # def read_refactored_acc_files(funcs, repeats_list):
@@ -160,11 +164,11 @@ def func_labels(func_string):
 repeats_list = [1000, 10000, 100000]
 bootstrapping = True
 # funcs = ['perm', 'det', 'haf', 'lhaf_w=N^-1', 'lhaf_w=0.1', 'lhaf_w=0.01', 'lhaf_w=1']
-funcs = ['perm', 'det', 'haf', 'lhaf_w=0.1', 'lhaf_w=1']
+funcs =  ['perm', 'det', 'haf', 'lhaf_w=0.1', 'lhaf_w=0.4', 'lhaf_w=1']
 # funcs = ['lhaf_w=1', 'lhaf_w=N^0.25']
 
 save_fig = False
-time_stamp = datetime.datetime.now().strftime("%Y-%m-%d(%H-%M-%S.%f)") # r'2024-02-26(15-48-23.239095)'
+time_stamp = r'2024-08-08(10-46-44.108248)'  # datetime.datetime.now().strftime("%Y-%m-%d(%H-%M-%S.%f)") # r'2024-02-26(15-48-23.239095)'  #r'2024-03-07(12-49-07.901770)'
 plt_dir = fr'..\Plots\acc_numerics\{time_stamp}'
 
 ''' Read data  '''
@@ -181,19 +185,19 @@ print('Read data finished')
 plt.rcParams.update({'font.size': 8})
 cycle = plt.rcParams['axes.prop_cycle'].by_key()['color']
 fontsize = 14
-Ns = [6, 10, 16, 20, 28, 34] # np.arange(6, 37)
-funcs_to_plot = ['det', 'perm', 'haf', 'lhaf_w=0.1', 'lhaf_w=1']
+Ns = [6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28] # , 34] # np.arange(6, 37)
+funcs_to_plot = ['det', 'perm', 'haf', 'lhaf_w=0.1', 'lhaf_w=0.4', 'lhaf_w=1']
 
 ''' Plot cdf[1/epsilon] against epsilon  '''
-epsilons = np.logspace(start=0, stop=6, num=20, base=10)
+epsilons = np.load(r'C:\Users\zl4821\PycharmProjects\displaced_car_chase\Plots\acc_numerics\2024-03-07(12-49-07.901770)\data\epsilons.npy') #  np.logspace(start=0, stop=6, num=20, base=10)
 # epsilons = np.load(r'..\Plots\acc_numerics\2024-01-08(11-29-21.512801)' + rf'\data\epsilons.npy')
 np.save(DFUtils.create_filename(plt_dir + rf'\data\epsilons.npy'), epsilons)
 
 # Set figure configuration according to Ns
 fig, axs = plt.subplot_mosaic('aabbcc;ddeeff;ggghhh', figsize=(15, 10), layout='constrained')
-assert len(axs.keys()) - 2 == len(Ns)
-
-for i_N, N in enumerate(Ns):
+# assert len(axs.keys()) - 2 == len(Ns)
+#
+for i_N, N in enumerate([6, 10, 16, 20, 28, 34]):
 
     ax = list(axs.values())[i_N]
     ax_label = list(axs.keys())[i_N]
@@ -205,10 +209,10 @@ for i_N, N in enumerate(Ns):
         func_label = func_labels(func)
 
         if N in multi_func_raw_data[func].keys():
-            # Refactor data
-            raw_data = multi_func_raw_data[func][N]
-            refactored_data = prefactor(N, func) * raw_data
-
+            # # Refactor data
+            # raw_data = multi_func_raw_data[func][N]
+            # refactored_data = prefactor(N, func) * raw_data
+            #
             # cdfs = np.zeros((len(epsilons)), dtype=float)
             # error_bars = np.zeros((2, len(epsilons)), dtype=float)
             #
@@ -229,7 +233,11 @@ for i_N, N in enumerate(Ns):
             cdfs = np.load(plt_dir + rf'\data\{func}\N={N}_cdfs.npy')
             error_bars = np.load(plt_dir + rf'\data\{func}\N={N}_errors.npy')
 
-            ax.errorbar(epsilons, cdfs, marker='.', ls='None', yerr=error_bars, color=cycle[i_func], label=func_label)
+            idx_zero = np.argmax(cdfs==0)
+            if idx_zero == 0:
+                ax.errorbar(epsilons, cdfs, marker='.', yerr=error_bars, color=cycle[i_func], label=func_label)
+            else:
+                ax.errorbar(epsilons[:idx_zero], cdfs[:idx_zero], marker='.', yerr=error_bars[:, :idx_zero], color=cycle[i_func], label=func_label)
 
             # plt.figure(f'cdf for {func}')
             # plt.errorbar(epsilons, cdfs, fmt='x', ls='None', yerr=error_bars, label=f'N={N}')
@@ -320,9 +328,15 @@ for i_func, func in enumerate(funcs_to_plot):
         p_errors = np.array(results_df[f'{quantity}_p_error'])
 
         ax = ax_list[i_q]
+        if func == 'lhaf_w=0.1':
+            marker = 'x'
+            ls = 'None'
+        else:
+            marker = '.'
+            ls = '-'
         ax.errorbar(results_df['N'], 1/results, yerr = [n_errors / results**2, p_errors / results**2],
                     color=cycle[i_func],
-                    marker='.', label=func_labels(func) )
+                    marker=marker, ls=ls, label=func_labels(func) )
 
         ax.set_xlabel('$N$', fontsize=fontsize-2)
         if i_q == 0:
