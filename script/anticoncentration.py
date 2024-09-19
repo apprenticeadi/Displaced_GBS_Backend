@@ -181,7 +181,7 @@ total_repeats = 100000
 sub_repeats = 100000
 n = total_repeats // sub_repeats
 dir_head = fr'..\Results\anticoncentration_over_X\{total_repeats}repeats'
-for N in np.logspace(1, 6, num=10, base=10, dtype=int):
+for N in np.arange(6, 35): # np.logspace(1, 6, num=10, base=10, dtype=int):
     save_dir = dir_head + fr'\prod_{time_stamp}\N={N}'
     os.makedirs(save_dir, exist_ok=True)
 
