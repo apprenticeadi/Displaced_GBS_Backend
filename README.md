@@ -58,7 +58,7 @@ https://doi.org/10.1038/s41534-025-01062-5
     number={1}, 
     journal={npj Quantum Information}, 
     publisher={Nature Portfolio}, 
-    author={Li, Zhenghao and Solomons, Naomi R and Jacob and Patel, Raj B and Walmsley, Ian A}, 
+    author={Li, Zhenghao and Solomons, Naomi R. and Bulmer, Jacob F.F. and Patel, Raj B. and Walmsley, Ian A.}, 
     year={2025}, 
     month={Jul} 
  }
