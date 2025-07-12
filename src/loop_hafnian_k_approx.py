@@ -8,7 +8,8 @@ def loop_hafnian_approx_batch(B, gamma, k=1):
     A clever batching method that calculates up to the k-th order approximation while greatly reducing
     the number of hafnian computations.
     The method should work for any general loop Hafnian, regardless of whether it is A or B matrix.
-    Credit: Bryn and Guillaume
+    Code credit to Bryn A. Bell and Guillaume S. Thekkadath, users should cite
+    https://journals.aps.org/prxquantum/abstract/10.1103/PRXQuantum.3.020336 where appropriate.
     """
 
     # fix A and D to be 128 bit complex numbers

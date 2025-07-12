@@ -4,12 +4,10 @@ from strawberryfields.decompositions import williamson
 from src.symplectic import Symplectic
 from src.utils import MatrixUtils
 
-
-# In this file we have functions that convert between graph matrices and gaussian matrices
-
-# Todo: the dtype and tol arguments are a bit messy. Try cleaning it up.
-
-# Todo: Should almost always avoid using Fock basis matrices.
+'''
+Methods to convert between the graph formalism and Gaussian state formalism of Displaced GBS. 
+One should almost always avoid using the Fock basis matrices, but they are useful for debugging and testing.
+'''
 
 class GBSMatrix:
     """

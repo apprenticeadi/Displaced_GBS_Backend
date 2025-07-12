@@ -12,10 +12,11 @@ from src.photon_number_distributions import single_displaced_squeezed_vacuum, to
 
 from thewalrus import hafnian
 
-# Construct experiment
-
-# TODO: One should avoid using Fock basis. xxpp basis is real and suffers less numerical errors. #]
-#  Converting between fock and xxpp basis is prone to error.
+'''
+Construct a Displaced GBS experiment. Object allows conversion between graph matrices, gaussian matrices and 
+experimental parameters. One should avoid using Fock basis, except for debugging and testing purposes. 
+xxpp basis is preferred as it is real and suffers less numerical errors. 
+'''
 
 class PureGBS:
 

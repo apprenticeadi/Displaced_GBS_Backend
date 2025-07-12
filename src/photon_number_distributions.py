@@ -4,6 +4,8 @@ from numpy.polynomial.hermite import hermval
 
 from src.utils import DGBSUtils
 
+'''Methods to calculate total photon number distribution of Displaced GBS'''
+
 def single_displaced_squeezed_vacuum(r, beta, cutoff):
     """
     Find the photon number distribution of a single mode displaced squeezed vacuum state up to cutoff

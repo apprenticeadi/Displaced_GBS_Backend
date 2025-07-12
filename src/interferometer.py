@@ -1,6 +1,7 @@
 import numpy as np
 
-# https://github.com/clementsw/interferometer
+# this class is cloned from https://github.com/clementsw/interferometer. Code credit to William R. Clements, users should
+# cite https://doi.org/10.1364/OPTICA.3.001460 where appropriate.
 
 class Beamsplitter:
     """This class defines a beam splitter
