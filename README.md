@@ -1,14 +1,16 @@
 # Displaced_GBS_Backend
 
 This Github repository provides a calculation backend for Displaced Gaussian Boson Sampling. It provides methods to 
-convert between graph representation, gaussian state representation and experiment circuit representation of 
-Displaced Gaussian Boson Sampling (D-GBS), as well as scripts to compute output photon number distribution, benchmark 
-complexity transition of D-GBS, numerically simulate the distribution of zeroes of the loop-Hafnian, and 
-parallel batch-compute loop-Hafnians to analyse their distribution. They may provide a useful complement to 
+convert between graph representation, Gaussian state representation and experiment circuit representation of 
+Displaced Gaussian Boson Sampling (D-GBS). It may provide a useful complement to 
 common quantum optics libraries such as [Strawberry Fields](https://strawberryfields.ai/) and 
-[The Walrus](https://the-walrus.readthedocs.io/). 
+[The Walrus](https://the-walrus.readthedocs.io/). For example, it is more explicit regarding which basis is being used for
+the Gaussian state representation. 
 
-The methods and conventions are based on our paper, [A complexity transition in displaced Gaussian Boson sampling](https://doi.org/10.1038/s41534-025-01062-5). 
+The repository also includes scripts to compute output photon number distribution, benchmark 
+complexity transition of D-GBS, numerically simulate the distribution of zeroes of the loop-Hafnian, and 
+parallel batch-compute loop-Hafnians to analyse their distribution. These methods are used for our paper 
+[A complexity transition in displaced Gaussian Boson sampling](https://doi.org/10.1038/s41534-025-01062-5). 
 Plotting scripts for the figures in the paper are also provided within this repository. Citations where appropriate would be appreciated. 
 
 ## Installation 
