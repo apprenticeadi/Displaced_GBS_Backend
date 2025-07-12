@@ -2,7 +2,7 @@ import numpy as np
 import random
 import warnings
 
-# This class is deprecated
+'''This class is deprecated, methods to generate random graph. Use utils.RandomUtils.random_adj() instead. '''
 
 class RandomGraph:
 
