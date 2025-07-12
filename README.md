@@ -9,7 +9,7 @@ common quantum optics libraries such as [Strawberry Fields](https://strawberryfi
 [The Walrus](https://the-walrus.readthedocs.io/). 
 
 The methods and conventions are based on our paper, [A complexity transition in displaced Gaussian Boson sampling](https://doi.org/10.1038/s41534-025-01062-5). 
-Citations where appropriate would be appreciated. 
+Plotting scripts for the figures in the paper are also provided within this repository. Citations where appropriate would be appreciated. 
 
 ## Installation 
 Users interested in using the code are welcome to fork this repository. 
